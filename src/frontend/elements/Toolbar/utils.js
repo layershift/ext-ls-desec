@@ -225,5 +225,6 @@ export const saveAutoSyncStatus = async function (domainSyncStatus) {
 };
 
 export const handleSearchChange = function (e) {
+    console.log()
     this.setState({searchQuery: e.target.value});
 };

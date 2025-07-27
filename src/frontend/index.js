@@ -39,19 +39,24 @@ export default class App extends Component {
 
 
         const sorted = [...filtered].sort((a, b) => {
-            let aVal;
-            let bVal;
+            let aVal, bVal;
+
             if (sortingBy === 'domain-name') {
-                aVal = a['domain-name'].toLowerCase();
-                bVal = b['domain-name'].toLowerCase();
+                aVal = a['domain-name']?.toLowerCase() ?? '';
+                bVal = b['domain-name']?.toLowerCase() ?? '';
+            } else if (sortingBy === 'last-sync-status') {
+                aVal = a['last-sync-status']?.toLowerCase() ?? '';
+                bVal = b['last-sync-status']?.toLowerCase() ?? '';
             } else {
-                aVal = (lastSyncTimestampsSuccess[a['domain-id']]?.status || '').toLowerCase();
-                bVal = (lastSyncTimestampsSuccess[b['domain-id']]?.status || '').toLowerCase();
+                // Fallback
+                return 0;
             }
+
             if (aVal < bVal) return sortingDirection === 'ASC' ? -1 : 1;
             if (aVal > bVal) return sortingDirection === 'ASC' ? 1 : -1;
             return 0;
         });
+
 
 
         const columns = [
@@ -164,35 +169,34 @@ export default class App extends Component {
                         {listLoading
                             ? <SkeletonText lines={5} />
                             : (
-                                <List
-                                    columns={columns}
-                                    data={sorted}
-                                    key={this.state.domains.map(d => d['domain-id'] + d['auto-sync-status']).join(',')}
-                                    rowKey={row => row['domain-id']}
-                                    sortColumn={{ sortBy: sortingBy, direction: sortingDirection }}
+                                <>
+                                    <DomainListToolbar
+                                        selectedDomains={selectedDomains}
+                                        sortingBy={sortingBy}
+                                        sortingDirection={sortingDirection}
+                                        addButtonState={addButtonState}
+                                        syncButtonState={syncButtonState}
+                                        searchQuery={searchQuery}
+                                        allSelectedAreRegistered={allSelectedAreRegistered}
+                                        allSelectedAreNotRegistered={allSelectedAreNotRegistered}
+                                        handleAddDomainToDesec={handleAddDomainToDesec.bind(this)}
+                                        handleDNSRecordsSync={handleDNSRecordsSync.bind(this)}
+                                        enableBulkAutoSync={handleBulkAutoSync.bind(this, true)}
+                                        disableBulkAutoSync={handleBulkAutoSync.bind(this, false)}
+                                        handleSearchChange={handleSearchChange.bind(this)}
+                                        handleSortByChange={handleSortByChange.bind(this)}
+                                        handleSortDirectionChange={handleSortDirectionChange.bind(this)}
+                                    />
 
-                                    toolbar={
-                                        <DomainListToolbar
-                                            selectedDomains={selectedDomains}
-                                            sortingBy={sortingBy}
-                                            sortingDirection={sortingDirection}
-                                            addButtonState={addButtonState}
-                                            syncButtonState={syncButtonState}
-                                            searchQuery={searchQuery}
-                                            allSelectedAreRegistered={allSelectedAreRegistered}
-                                            allSelectedAreNotRegistered={allSelectedAreNotRegistered}
-                                            handleAddDomainToDesec={handleAddDomainToDesec.bind(this)}
-                                            handleDNSRecordsSync={handleDNSRecordsSync.bind(this)}
-                                            enableBulkAutoSync={handleBulkAutoSync.bind(this, true)}
-                                            disableBulkAutoSync={handleBulkAutoSync.bind(this, false)}
-                                            handleSearchChange={handleSearchChange.bind(this)}
-                                            handleSortByChange={handleSortByChange.bind(this)}
-                                            handleSortDirectionChange={handleSortDirectionChange.bind(this)}
-                                        />
-                                    }
-
-                                    emptyView={<ListEmptyView title="No domains!" description="Add domains in Plesk to sync with deSEC." />}
-                                />
+                                    <List
+                                        columns={columns}
+                                        data={sorted}
+                                        key={this.state.domains.map(d => d['domain-id'] + d['auto-sync-status']).join(',')}
+                                        rowKey={row => row['domain-id']}
+                                        sortColumn={{ sortBy: sortingBy, direction: sortingDirection }}
+                                        emptyView={<ListEmptyView title="No domains!" description="The domain that you are looking for doesn't exist or there aren't any domains hosted on this Plesk instance." />}
+                                    />
+                                </>
                             )}
                     </Tab>
 
