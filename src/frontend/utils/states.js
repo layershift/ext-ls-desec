@@ -25,5 +25,11 @@ export const states= {
     sortingBy: 'domain-name',
     sortingDirection: 'ASC',
     syncResponse: [],
-    logVerbosityStatus: ""
+    logVerbosityStatus: "",
+    tokenStatus: "true",
+    formState: "",
+    isFormOpen: true,
+    emptyViewDescription: "The domain that you are looking for doesn't exist or there aren't any domains hosted on this Plesk instance.",
+    emptyViewTitle: "No domains!"
 };
+

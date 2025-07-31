@@ -6,6 +6,7 @@ import { createElement, Component } from '@plesk/plesk-ext-sdk';
 
 export const getDomainsInfo = async function () {
     const key = Math.random().toString();
+    this.setState({listLoading: true});
 
     try {
         const { data } = await myAxios.get(
@@ -29,6 +30,7 @@ export const getDomainsInfo = async function () {
                     message: `Successfully fetched ${domainsArray.length} domain(s).`
                 }
             ],
+            listLoading: false
         }));
 
     } catch (error) {
@@ -44,7 +46,9 @@ export const getDomainsInfo = async function () {
                     message: `${errorMessage}`
                 }
             ],
-            domainError: errorMessage
+            domainError: errorMessage,
+            listLoading: false
+
         }));
     }
 };
@@ -160,5 +164,30 @@ export const getLogVerbosityStatus = async function () {
         logVerbosityStatus: data["log-verbosity"]
     });
 };
+
+export const checkTokenExists = async function () {
+    try {
+        const { data } = await axios.get(
+            `${this.props.baseUrl}/api/retrieve-token`,
+        );
+
+
+        this.setState({
+            tokenStatus: data["token"]
+        });
+
+    } catch(error) {
+        this.setState(prevState => ({
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key: Math.random().toString(),
+                    intent: 'danger',
+                    message: `${error.message}`
+                }
+            ]}),
+        );
+    }
+}
 
 

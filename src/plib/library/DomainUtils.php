@@ -18,6 +18,7 @@ require_once __DIR__ . '/utils/Settings.php';
 class DomainUtils
 {
 
+    //Lazy loading the logger
     public function getLogger() {
         if (!$this->logger) {
             $logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
@@ -36,14 +37,26 @@ class DomainUtils
         $domainsData = array();
         $desec = new Domains();
 
+        // I am retrieving all the domains that are registered with deSEC and if an errors occurs, I rethrow it
+        // to the ApiController
+        try {
+            $domains = $desec->getDesecDomains();
+
+            $domainNameSet = array_fill_keys(
+                array_column($domains['response'], 'name'),
+                true
+            );
+
+        } catch(Exception $e) {
+            throw $e;
+        }
+
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
-            $desecStatus = $desec->getDomain($pm_Domain->getName());
-            if($desecStatus['code'] === 200) {
+
+            if(isset($domainNameSet[$pm_Domain->getName()])) {
                 $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Registered");
-            } else if ($desecStatus['code'] === 404) {
-                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
             } else {
-                throw new Exception("Error occurred while retrieving the deSEC status of the domains! Error(" . $desecStatus['code'] . "): " . array_values($desecStatus['response'])[0]);
+                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
             }
 
             $domainsData[] = [
@@ -233,6 +246,28 @@ class DomainUtils
         if (count($summary['missing']) > 0) {
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['missing']);
+                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                }
+            } catch (Exception $e) {
+                throw $e;
+            }
+        }
+
+        if (count($summary['modified']) > 0) {
+            try {
+                $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PUT');
+                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                }
+            } catch (Exception $e) {
+                throw $e;
+            }
+        }
+
+        if (count($summary['deleted']) > 0) {
+            try {
+                $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PATCH');
                 if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                     $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }

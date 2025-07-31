@@ -3,117 +3,215 @@
 namespace desec;
 
 use Exception;
+use library\utils\Settings;
 use pm_Config;
+use pm_Settings;
 
 class Dns
 {
+    private $logger;
     private mixed $token;
     private $API_BASE_URL = "https://desec.io/api/v1/";
 
+    private function getLogger()
+    {
+        if (!$this->logger) {
+            $this->logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
+        }
+
+        return $this->logger;
+    }
 
     public function __construct() {
-        $this->token = pm_Config::get("DESEC_API_TOKEN");
-    }
-    public function pushRRsetDesec($domainName, $payload, $method = 'POST') {
-        $url = $this->API_BASE_URL . "domains/" . $domainName . "/rrsets/";
-        $curl = curl_init($url);
-
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, strtoupper($method)); // Accepts POST, PATCH, PUT.
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Token $this->token",
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($payload));
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-
-        $decoded = json_decode($response, true);
-
-
-        if($httpCode >= 400) {
-            $nonEmpty = array_filter($decoded, function ($item) {
-                return !empty($item);
-            });
-            $errorMessage = empty($nonEmpty)
-                ? 'No error details available.'
-                : json_encode($nonEmpty, JSON_PRETTY_PRINT);
-
-            throw new Exception(
-                "Desec API error: " . $errorMessage . " (HTTP {$httpCode})"
-            );
+        if(pm_Config::get("DESEC_API_TOKEN") !== "") {
+            $this->token = pm_Config::get("DESEC_API_TOKEN");
+        } else {
+            $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
         }
-
-        return ["code" => $httpCode, "response" => $decoded === null ? $response : $decoded];
     }
+    public function pushRRsetDesec($domainName, $payload, $method = 'POST', $maxRetries = 5) {
+        $url = $this->API_BASE_URL . "domains/" . $domainName . "/rrsets/";
+        $attempt = 0;
 
-    public function getRRSets($domainName)
-    {
-        $desecArray = array();
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
 
-        $curl = curl_init($this->API_BASE_URL . "domains/" . $domainName . "/rrsets/");
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Token $this->token",
-            "Content-Type: application/json"
-        ]);
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => strtoupper($method),
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token {$this->token}",
+                    "Content-Type: application/json"
+                ],
+                CURLOPT_POSTFIELDS  => json_encode($payload)
+            ]);
 
-        $desecResponse = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+            curl_close($curl);
 
-        curl_close($curl);
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
 
-        $decodedResponse = json_decode($desecResponse, true);
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+                return ["code" => $httpCode, "response" => json_decode($body)];
 
-        if ($httpCode < 400) {
-            if(!empty($decodedResponse)) {
-                $desecArray = [];
-                foreach ($decodedResponse as $response) {
-                    if (isset($response['type'], $response['subname'], $response['ttl'], $response['records']) &&
-                        $response['type'] !== 'NS'
-                    ) {
-                        $desecArray[] = [
-                            'subname' => $response['subname'],
-                            'type' => $response['type'],
-                            'ttl' => (int)$response['ttl'],
-                            'records' => $response['records'],
-                        ];
-                    }
+                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
                 }
 
-                usort($desecArray, fn($a, $b) => strcmp($a['type'], $b['type']));
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
 
-                return ["code" => $httpCode, "response" => $desecArray];
+                //Case 3: Other unhandled situations
             } else {
-                return ["code" => $httpCode, "response" => $decodedResponse];
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
-        } else {
-            throw new Exception("Error occurred while retrieving the RRsets! Error(" . $httpCode . "): " . array_values($decodedResponse)[0]);
         }
 
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
+    }
+
+    public function getRRSets($domainName, $maxRetries = 5)
+    {
+        $desecArray = array();
+        $url = $this->API_BASE_URL . "domains/" . $domainName . "/rrsets/";
+
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token {$this->token}",
+                    "Content-Type: application/json"
+                ],
+            ]);
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+            curl_close($curl);
+
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
+
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+
+                $desecArray = [];
+                $decodedResponse = json_decode($body, true);
+                if (!empty($decodedResponse)) {
+
+                    foreach ($decodedResponse as $response) {
+                        if (isset($response['type'], $response['subname'], $response['ttl'], $response['records']) &&
+                            $response['type'] !== 'NS'
+                        ) {
+                            $desecArray[] = [
+                                'subname' => $response['subname'],
+                                'type' => $response['type'],
+                                'ttl' => (int)$response['ttl'],
+                                'records' => $response['records'],
+                            ];
+                        }
+                    }
+
+                    usort($desecArray, fn($a, $b) => strcmp($a['type'], $b['type']));
+
+                }
+
+                return ["code" => $httpCode, "response" => $desecArray];
+
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
+                }
+
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
+
+            //Case 3: Other unhandled situations
+            } else {
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+            }
+
+        }
+
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
 
     }
 
-    public function getSpecificRRset($domainName, $subname, $type) {
+    public function getSpecificRRset($domainName, $subname, $type, $maxRetries = 5) {
         if($subname == '') {
             $subname = '@';
         }
+        $url = $this->API_BASE_URL . "domains/". $domainName . "/rrsets/" . $subname . "/" . $type . "/";
 
-        $curl = curl_init($this->API_BASE_URL . "domains/". $domainName . "/rrsets/" . $subname . "/" . $type . "/");
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Token $this->token",
-            "Content-Type: application/json"
-        ]);
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
 
-        $desecResponse = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token $this->token",
+                    "Content-Type: application/json"
+                ]
+            ]);
 
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+            curl_close($curl);
 
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
 
-        return ["code" => $httpCode, "response" => $desecResponse];
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+                return ["code" => $httpCode, "response" => json_decode($body)];
+
+                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
+                }
+
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
+
+                //Case 3: Other unhandled situations
+            } else {
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+            }
+
+        }
+
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
+
     }
 }

@@ -12,119 +12,204 @@ use Psr\Log\LoggerInterface;
 class Domains
 {
     private mixed $token;
+    private $logger;
     private $API_BASE_URL = "https://desec.io/api/v1/";
 
 
-    public function __construct() {
-        $this->token = pm_Config::get("DESEC_API_TOKEN");
+    public function __construct()
+    {
+        if (pm_Config::get("DESEC_API_TOKEN") !== "") {
+            $this->token = pm_Config::get("DESEC_API_TOKEN");
+        } else {
+            $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
+        }
     }
 
-    private function getLogger() {
+    private function getLogger()
+    {
         if (!$this->logger) {
-            $logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
+            $this->logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
         }
 
-        return $logger;
-    }
-    public function getDomain($domain) {
-
-        $curl = curl_init($this->API_BASE_URL . "domains/" . $domain . "/");
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Token $this->token",
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-
-        return ["code" => $httpCode, "response" => json_decode($response, true)];
-
+        return $this->logger;
     }
 
-    public function getDesecDomains() {
-        $curl = curl_init($this->API_BASE_URL . "domains/");
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Token $this->token",
-            "Content-Type: application/json"
-        ]);
-
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-
-        return ["code" => $httpCode, "response" => $response];
-    }
-
-    /**
+    /*
+     * This function makes an API call to deSEC and retrieves all the domains registered with it
+     * Input:
+     *      @var Settings $enum
      *
+     * Return:
+     *      array => []
      */
-    public function addDomain($domain) {
-        $postData = json_encode(["name" => $domain]);
-        $maxAttempts = 2;
-        $attempt = 0;
+    public function getDesecDomains($maxRetries = 5)
+    {
+        $url = $this->API_BASE_URL . "domains/";
 
-        do {
-            $attempt++;
-            $curl = curl_init($this->API_BASE_URL . "domains/");
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, [
-                "Authorization: Token $this->token",
-                "Content-Type: application/json"
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token {$this->token}",
+                    "Content-Type: application/json"
+                ],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true
             ]);
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
 
             $response = curl_exec($curl);
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
             curl_close($curl);
 
-            $responseData = json_decode($response, true);
-            if ($httpCode >= 400 && $httpCode !== 429) {
-                throw new Exception("Domain " . $domain  . " failed to register because the following error occurred: " . array_values($responseData)[0]);
-            }
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
 
-            if ($httpCode === 429 && $attempt < $maxAttempts) {
-                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting 3600 seconds and then will try again!");
-                sleep(3600);
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+                return ["code" => $httpCode, "response" => json_decode($body)];
+
+                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
+                }
+
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
+
+                //Case 3: Other unhandled situations
             } else {
-                break;
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
-        } while ($attempt < $maxAttempts);
-
-        pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Registered");
-        pm_Domain::getByName($domain)->setSetting(Settings::AUTO_SYNC_STATUS->value, "true");
-
-        return $responseData;
-
+        }
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
     }
 
+    /*
+     * This function
+     *
+     */
+    public function addDomain($domain, $maxRetries = 5)
+    {
+        $postData = json_encode(["name" => $domain]);
+        $url = $this->API_BASE_URL . "domains/";
+        $attempt = 0;
 
-    public function deleteDomain($name) {
-        $url = $this->API_BASE_URL . "domains/" . urlencode($name) . "/";
-        $curl = curl_init($url);
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
 
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => "DELETE",
-            CURLOPT_HTTPHEADER     => [
-                "Authorization: Token {$this->token}",
-                "Content-Type: application/json"
-            ],
-        ]);
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token $this->token",
+                    "Content-Type: application/json"
+                ],
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $postData,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true
+            ]);
 
-        $response = curl_exec($curl);
-        if ($response === false) {
-            $error = curl_error($curl);
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
             curl_close($curl);
-            return ["code" => 0, "error" => $error];
+
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
+
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+                pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Registered");
+                pm_Domain::getByName($domain)->setSetting(Settings::AUTO_SYNC_STATUS->value, "true");
+
+                return ["code" => $httpCode, "response" => json_decode($body)];
+
+                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
+                }
+
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
+
+                //Case 3: Other unhandled situations
+            } else {
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+            }
         }
 
-        $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-        return ["code" => $code, "response" => $response];
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
     }
 
+
+    public function deleteDomain($domain, $maxRetries = 5)
+    {
+        $url = $this->API_BASE_URL . "domains/" . urlencode($domain) . "/";
+        $attempt = 0;
+
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+
+            // Settings up curl for what is about to come
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => "DELETE",
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Token {$this->token}",
+                    "Content-Type: application/json"
+                ],
+            ]);
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+            curl_close($curl);
+
+            // Getting the headers and the body - deSEC response
+            $headerText = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
+
+            //Case 1: Everything works as expected
+            if ($httpCode !== 429 && $httpCode < 400) {
+                return ["code" => $httpCode, "response" => json_decode($body)];
+
+                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            } else if ($httpCode == 429) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
+                    $retryAfter = (int)$matches[1];
+                } else {
+                    $retryAfter = 5; // fallback delay
+                }
+
+                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
+                sleep($retryAfter);
+
+                //Case 3: Other unhandled situations
+            } else {
+                $errorData = json_decode($body, true);
+                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+            }
+        }
+
+        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
+    }
 }
+
+
