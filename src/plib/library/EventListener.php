@@ -1,15 +1,19 @@
 <?php
 
-//namespace library;
+require_once __DIR__ . '/utils/Settings.php';
+require_once __DIR__ . '/desec/Domains.php';
+require_once __DIR__ . '/DomainUtils.php';
 
 use desec\Domains;
 use library\DomainUtils;
 use library\utils\Settings;
-use pm_Bootstrap;
 use Psr\Log\LoggerInterface;
 
 class Modules_LsDesecDns_EventListener implements EventListener
 {
+
+    private $logger;
+
     public function getLogger()
     {
         if (!$this->logger) {
@@ -23,7 +27,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
     {
         return [
             'domain_dns_update',
-            'domain-delete'
+            'domain_delete'
         ];
     }
 
@@ -36,13 +40,14 @@ class Modules_LsDesecDns_EventListener implements EventListener
         switch($action) {
             case 'domain_dns_update':
                 $this->getLogger()->debug("[ event-listener ] Domain's DNS zone was updated!");
-
-                $domain_name = $newValues["Domain Name"];
                 $domain_id = $objectId;
-                $utils = new DomainUtils();
 
-                if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "true") === "true") {
+                if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true") {
                     try {
+                        $domain_name = $newValues["Domain Name"];
+
+                        $utils = new DomainUtils();
+
                         $summary = $utils->syncDomain($domain_id);
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS(auto-sync)");
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, (new DateTime())->format('Y-m-d H:i:s T'));
@@ -55,8 +60,9 @@ class Modules_LsDesecDns_EventListener implements EventListener
                         $this->getLogger()->error("[ event-listener ] Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
                     }
                 }
+                break;
 
-            case 'domain-delete':
+            case 'domain_delete':
                 $domain_name = $oldValues["Domain Name"];
                 $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was deleted!");
 
@@ -67,12 +73,13 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
                     try {
                         $response = $desec->deleteDomain($domain_name);
-                        $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was successfully deleted!");
+                        $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC!");
 
                     } catch(Exception $e) {
                         $this->getLogger()->error("[ event-listener ]" . $e->getMessage());
                     }
                 }
+                break;
 
         }
 

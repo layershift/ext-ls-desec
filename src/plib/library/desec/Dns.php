@@ -4,8 +4,10 @@ namespace desec;
 
 use Exception;
 use library\utils\Settings;
+use pm_Bootstrap;
 use pm_Config;
 use pm_Settings;
+use Psr\Log\LoggerInterface;
 
 class Dns
 {
@@ -29,6 +31,7 @@ class Dns
             $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
         }
     }
+
     public function pushRRsetDesec($domainName, $payload, $method = 'POST', $maxRetries = 5) {
         $url = $this->API_BASE_URL . "domains/" . $domainName . "/rrsets/";
         $attempt = 0;
@@ -49,6 +52,14 @@ class Dns
             ]);
 
             $response = curl_exec($curl);
+
+            if ($response === false) {
+                $curlError = curl_error($curl);
+                $curlErrno = curl_errno($curl);
+                curl_close($curl);
+                throw new Exception("cURL error while fetching RRset: [{$curlErrno}] {$curlError}");
+            }
+
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
             curl_close($curl);
@@ -63,8 +74,10 @@ class Dns
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
+                $this->getLogger()->debug("Debug ReGEX 1: " . preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches) . PHP_EOL);
+
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
-                    $retryAfter = (int)$matches[1];
+                    $retryAfter = (int)$matches[1] + .5;
                 } else {
                     $retryAfter = 5; // fallback delay
                 }
@@ -74,9 +87,23 @@ class Dns
 
                 //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+                $decodedBody = json_decode($body, true);
+
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }
+
+                throw new Exception("Error occurred while sending the RRset payload to deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
 
@@ -102,6 +129,14 @@ class Dns
             ]);
 
             $response = curl_exec($curl);
+
+            if ($response === false) {
+                $curlError = curl_error($curl);
+                $curlErrno = curl_errno($curl);
+                curl_close($curl);
+                throw new Exception("cURL error while fetching RRset: [{$curlErrno}] {$curlError}");
+            }
+
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
             curl_close($curl);
@@ -138,8 +173,9 @@ class Dns
 
             //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
+                $this->getLogger()->debug("Debug ReGEX 2: " . preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches));
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
-                    $retryAfter = (int)$matches[1];
+                    $retryAfter = (int)$matches[1] + .5;
                 } else {
                     $retryAfter = 5; // fallback delay
                 }
@@ -149,9 +185,23 @@ class Dns
 
             //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+                $decodedBody = json_decode($body, true);
+
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }
+
+                throw new Exception("Error retrieving RRsets from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
 
         }
@@ -172,13 +222,23 @@ class Dns
             $curl = curl_init($url);
             curl_setopt_array($curl, [
                 CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
                 CURLOPT_HTTPHEADER => [
-                    "Authorization: Token $this->token",
+//                    "Authorization: Token $this->token",
+                    "Authorization: Token something",
                     "Content-Type: application/json"
                 ]
             ]);
 
             $response = curl_exec($curl);
+
+            if ($response === false) {
+                $curlError = curl_error($curl);
+                $curlErrno = curl_errno($curl);
+                curl_close($curl);
+                throw new Exception("cURL error while fetching RRset: [{$curlErrno}] {$curlError}");
+            }
+
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
             curl_close($curl);
@@ -188,13 +248,15 @@ class Dns
             $body = substr($response, $headerSize);
 
             //Case 1: Everything works as expected
-            if ($httpCode !== 429 && $httpCode < 400) {
-                return ["code" => $httpCode, "response" => json_decode($body)];
+            if (($httpCode !== 429 && $httpCode < 400) || ($httpCode === 404)) {
+                return ["code" => $httpCode, "response" => $response];
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
+                $this->getLogger()->debug("Debug ReGEX 3: " . preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches));
+                $this->getLogger()->debug("Headers: " . $headerText . PHP_EOL);
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
-                    $retryAfter = (int)$matches[1];
+                    $retryAfter = (int)$matches[1] + .5;
                 } else {
                     $retryAfter = 5; // fallback delay
                 }
@@ -204,11 +266,24 @@ class Dns
 
                 //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
-            }
+                $decodedBody = json_decode($body, true);
 
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }
+
+                throw new Exception("Error retrieving RRset from deSEC! HTTP {$httpCode}: " . $errorMessage);
+            }
         }
 
         throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");

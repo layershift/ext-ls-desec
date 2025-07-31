@@ -228,7 +228,7 @@ class ApiController extends pm_Controller_Action
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
 
-                } catch(Exception $e) {
+                } catch(Exception | Zend_Exception $e) {
                     if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                         $this->getLogger()->error("Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
                     }
@@ -283,6 +283,10 @@ class ApiController extends pm_Controller_Action
                 $this->_helper->json($failureResponse);
             }
         }
+    }
+
+    public function validateTokenAction() {
+
     }
 
 }

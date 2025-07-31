@@ -114,8 +114,8 @@ export default class App extends React.PureComponent {
                 title: 'Last Sync Status',
                 render: row => {
                     const status = row["last-sync-status"];
-                    if (status === "SUCCESS") return <Label icon="check-mark-circle-filled" size="sm" view="light" intent="success">Success</Label>;
-                    if (status === "FAILED") return <Label icon="exclamation-mark-circle" size="sm" view="light" intent="danger">Failed</Label>;
+                    if (status.startsWith("SUCCESS")) return <Label icon="check-mark-circle-filled" size="sm" view="light" intent="success">{status}</Label>;
+                    if (status.startsWith("FAILED")) return <Label icon="exclamation-mark-circle" size="sm" view="light" intent="danger">{status}</Label>;
                     return <Text intent="muted">No data</Text>;
                 }
             },

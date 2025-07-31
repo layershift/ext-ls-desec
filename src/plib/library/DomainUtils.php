@@ -17,7 +17,7 @@ require_once __DIR__ . '/utils/Settings.php';
 
 class DomainUtils
 {
-
+    private $logger;
     //Lazy loading the logger
     public function getLogger() {
         if (!$this->logger) {
@@ -185,10 +185,6 @@ class DomainUtils
             $response = $desec->getSpecificRRset($domainName, $rrset['subname'], $rrset['type']);
             $desecRRset = json_decode($response['response'], true);
 
-            if ($response['code'] > 404) {
-                throw new Exception("Error fetching RRset: " . array_values($desecRRset)[0]);
-            }
-
             $pleskRecords = $rrset['records'];
             $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
 
@@ -207,11 +203,11 @@ class DomainUtils
             $key = $this->buildKey($rrset['type'], $rrset['subname']);
             $pleskRecords[$key] = true;
 
-            if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->debug("Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);
-                $this->getLogger()->debug("Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
-            }
+        }
 
+        if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+            $this->getLogger()->debug("Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);
+            $this->getLogger()->debug("Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
         }
 
         if(!empty($allDesecRRsets['response']) ) {
@@ -258,7 +254,7 @@ class DomainUtils
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PUT');
                 if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                    $this->getLogger()->debug("Successfully modified RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }
             } catch (Exception $e) {
                 throw $e;
@@ -269,7 +265,7 @@ class DomainUtils
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PATCH');
                 if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                    $this->getLogger()->debug("Successfully deleted the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }
             } catch (Exception $e) {
                 throw $e;

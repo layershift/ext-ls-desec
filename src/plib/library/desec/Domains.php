@@ -85,9 +85,21 @@ class Domains
 
                 //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+                $decodedBody = json_decode($body, true);
+
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
         throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
@@ -110,6 +122,7 @@ class Domains
             curl_setopt_array($curl, [
                 CURLOPT_HTTPHEADER => [
                     "Authorization: Token $this->token",
+//                    "Authorization: Token asd",
                     "Content-Type: application/json"
                 ],
                 CURLOPT_POST => true,
@@ -147,8 +160,22 @@ class Domains
 
                 //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                $decodedBody = json_decode($body, true);
+
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }
+
                 throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
@@ -202,8 +229,21 @@ class Domains
 
                 //Case 3: Other unhandled situations
             } else {
-                $errorData = json_decode($body, true);
-                $errorMessage = is_array($errorData) ? reset($errorData) : 'Unknown error';
+                $decodedBody = json_decode($body, true);
+
+                if(is_array($decodedBody)) {
+                    $firstValue = array_values($decodedBody)[0];
+
+                    if(is_array($firstValue)) {
+                        // Try to extract the error message from the nested array
+                        $nestedFirst = array_values($firstValue)[0];
+                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
+                    } else {
+                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
+                    }
+                } else {
+                    $errorMessage = 'Unknown error or invalid JSON';
+                }
                 throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
