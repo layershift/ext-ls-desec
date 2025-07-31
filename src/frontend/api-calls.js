@@ -6,15 +6,13 @@ import { createElement, Component } from '@plesk/plesk-ext-sdk';
 
 export const getDomainsInfo = async function () {
     const key = Math.random().toString();
-    this.setState({listLoading: true});
+
+    this.setState({ listLoading: true });
 
     try {
-        const { data } = await myAxios.get(
+        const {data} = await axios.get(
             `${this.props.baseUrl}/api/get-domains-info`
         );
-
-        console.log(data);
-
         const domainsArray = Array.isArray(data)
             ? data
             : Object.values(data);
@@ -46,7 +44,6 @@ export const getDomainsInfo = async function () {
                     message: `${errorMessage}`
                 }
             ],
-            domainError: errorMessage,
             listLoading: false
 
         }));
@@ -186,6 +183,63 @@ export const checkTokenExists = async function () {
                     message: `${error.message}`
                 }
             ]}),
+        );
+    }
+}
+
+export const validateToken = async function () {
+    try {
+        const { data } = await myAxios.post(
+            `${this.props.baseUrl}/api/validate-token`,
+                [this.state.inputToken]
+        )
+
+        if(data.token === "true") {
+            this.setState(prevState => ({
+                toasts: [
+                    ...prevState.toasts,
+                    {
+                        key: Math.random().toString(),
+                        intent: 'success',
+                        message: `Valid deSEC API token provided. Welcome!`
+                    }
+                ],
+
+                formState: undefined,
+                isFormOpen: false,
+                tokenStatus: "true",
+                }
+            ));
+            await getDomainsInfo.call(this);
+        } else {
+            this.setState(prevState => ({
+                toasts: [
+                    ...prevState.toasts,
+                    {
+                        key: Math.random().toString(),
+                        intent: 'danger',
+                        message: `Invalid deSEC API token. Please insert a valid one!`
+                    }
+                ],
+                formState: undefined,
+                })
+            );
+        }
+
+
+    } catch(error) {
+        console.error(error)
+        this.setState(prevState => ({
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key: Math.random().toString(),
+                    intent: 'danger',
+                    message: `${error.message}`
+                }
+            ],
+            formState: undefined,
+            })
         );
     }
 }

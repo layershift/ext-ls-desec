@@ -2,7 +2,7 @@ import React from 'react';
 import { propTypes } from './utils/constants';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { handleSortByChange, handleSortDirectionChange } from "./elements/SortingMenu/utils";
-import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, getLogVerbosityStatus, saveLogVerbosityStatus, checkTokenExists} from './api-calls';
+import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, getLogVerbosityStatus, saveLogVerbosityStatus, checkTokenExists, validateToken} from './api-calls';
 import DomainListToolbar from "elements/Toolbar/Toolbar";
 import { states } from './utils/states';
 import { handleAddDomainToDesec, handleDNSRecordsSync, handleSearchChange } from './elements/Toolbar/utils';
@@ -47,7 +47,6 @@ export default class App extends React.PureComponent {
          await getDomainRetentionStatus.call(this);
          await getLogVerbosityStatus.call(this);
 
-        this.setState({ isFormOpen: true, listLoading: false });
     }
 
     getFilteredSortedDomains() {
@@ -171,7 +170,8 @@ export default class App extends React.PureComponent {
             formState,
             isFormOpen,
             emptyViewTitle,
-            emptyViewDescription
+            emptyViewDescription,
+            inputToken
         } = this.state;
 
         const filtered = domains.filter(d => d['domain-name']?.toLowerCase().includes(searchQuery.trim().toLowerCase()));
@@ -190,14 +190,15 @@ export default class App extends React.PureComponent {
                         title="deSEC Credentials"
                         size="md"
                         isOpen={isFormOpen}
-                        onClose={() => this.setState({ isFormOpen: false })}
+                        onClose={() => {
+                            this.setState(({
+                                isFormOpen: false,
+                            }));
+                        }}
                         form={{
                             onSubmit: () => {
                                 this.setState({ formState: 'submit' });
-                                setTimeout(() => {
-                                    this.setState({ formState: undefined, isFormOpen: false });
-                                    window.alert('Form saved');
-                                }, 3000);
+                                validateToken.bind(this)();
                             },
                             applyButton: false,
                             submitButton: {
@@ -208,9 +209,15 @@ export default class App extends React.PureComponent {
                         }}
                     >
                         <Section title="deSEC API Token">
-                            <FormFieldText label="API Token" required />
+                            <FormFieldText
+                                label="API Token"
+                                size="md"
+                                required
+                                onChange={(value) => this.setState({ inputToken: value })}
+                            />
                         </Section>
                     </Drawer>
+
                 )}
 
                 <Tabs active={1} monospaced>

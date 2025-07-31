@@ -4,7 +4,6 @@ const myAxios = axios.create();
 
 myAxios.interceptors.response.use(
     response => {
-        console.log(response);
         if (response.data && response.data.error) {
 
             const enrichedError = new Error();

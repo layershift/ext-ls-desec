@@ -45,6 +45,8 @@ class Account
             $headerText = substr($response, 0, $headerSize);
             $body = substr($response, $headerSize);
 
+            $this->getLogger()->debug("Response: " . $response . " " . $token);
+
             //Case 1: Everything works as expected
             if ($httpCode !== 401 && $httpCode < 500) {
                 return ["token" => "true"];
@@ -60,7 +62,11 @@ class Account
                 $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
                 sleep($retryAfter);
 
-            //Case 3: Other unhandled situations
+            //Case 3: Token gets invalidated
+            } else if($httpCode === 401) {
+                return ["token" => "false"];
+
+            //Case 4: Other unhandled situations
             } else {
                 $decodedBody = json_decode($body, true);
 
@@ -80,6 +86,7 @@ class Account
 
                 throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
+
         }
 
         throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");

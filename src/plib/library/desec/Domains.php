@@ -7,6 +7,7 @@ use library\utils\Settings;
 use pm_Bootstrap;
 use pm_Config;
 use pm_Domain;
+use pm_Settings;
 use Psr\Log\LoggerInterface;
 
 class Domains
@@ -18,7 +19,7 @@ class Domains
 
     public function __construct()
     {
-        if (pm_Config::get("DESEC_API_TOKEN") !== "") {
+        if (pm_Config::get("DESEC_API_TOKEN")) {
             $this->token = pm_Config::get("DESEC_API_TOKEN");
         } else {
             $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
@@ -99,15 +100,20 @@ class Domains
                     }
                 } else {
                     $errorMessage = 'Unknown error or invalid JSON';
-                }                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+                }
+
+                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
         throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
     }
 
     /*
-     * This function
-     *
+     * This function is used to register domains in deSEC
+     * Input:
+     *      @var String domain
+     * Return
+     *      array => []
      */
     public function addDomain($domain, $maxRetries = 5)
     {

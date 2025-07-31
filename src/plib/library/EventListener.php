@@ -73,7 +73,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
                     try {
                         $response = $desec->deleteDomain($domain_name);
-                        $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC!");
+                        $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC! Details: " . json_encode($response, true));
 
                     } catch(Exception $e) {
                         $this->getLogger()->error("[ event-listener ]" . $e->getMessage());

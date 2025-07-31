@@ -1,12 +1,17 @@
 <?php
 
-use desec\Domains;
+require_once __DIR__ . '/../library/utils/Settings.php';
+require_once __DIR__ . '/../library/desec/Account.php';
+require_once __DIR__ . '/../library/DomainUtils.php';
+require_once __DIR__ . "/../library/desec/Domains.php";
+require_once __DIR__ . "/../library/desec/Dns.php";
+
+use library\desec\Domains;
+use library\desec\Account;
 use library\utils\Settings;
 use library\DomainUtils;
 use Psr\Log\LoggerInterface;
 
-require_once __DIR__ . "/../library/desec/Domains.php";
-require_once __DIR__ . '/../library/DomainUtils.php';
 
 
 class ApiController extends pm_Controller_Action
@@ -25,11 +30,13 @@ class ApiController extends pm_Controller_Action
 
         try {
             $pleskDomains = new DomainUtils();
-            $this->_helper->json($pleskDomains->getPleskDomains());
-
             if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                 $this->getLogger()->debug("Successfully retrieved the informations regarding the domains!");
             }
+
+            $this->_helper->json($pleskDomains->getPleskDomains());
+
+
         } catch (Exception $e) {
             if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                 $this->getLogger()->error($e->getMessage());
@@ -214,7 +221,6 @@ class ApiController extends pm_Controller_Action
     public function syncDnsZoneAction()
     {
         if ($this->getRequest()->isPost()) {
-            $this->_helper->json(["error" => "Invalid request method."], false);
 
             $payload = json_decode(file_get_contents('php://input'), true);
 
@@ -228,7 +234,7 @@ class ApiController extends pm_Controller_Action
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
 
-                } catch(Exception | Zend_Exception $e) {
+                } catch(Exception $e) {
                     if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                         $this->getLogger()->error("Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
                     }
@@ -286,7 +292,33 @@ class ApiController extends pm_Controller_Action
     }
 
     public function validateTokenAction() {
+        if ($this->getRequest()->isPost()) {
+            try {
+                $payload = json_decode(file_get_contents('php://input'), true);
+                $tokenValidity = (new Account())->validateToken($payload[0]);
 
+                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Token validation response: " . json_encode($tokenValidity));
+                }
+
+                if($tokenValidity["token"] === "true") {
+                    pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);
+                }
+
+                $this->_helper->json($tokenValidity);
+
+            } catch(Exception $e) {
+                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->error($e->getMessage());
+                }
+
+                $failureResponse = [ "error" =>
+                    [ "message" =>  $e->getMessage() ]
+                ];
+
+                $this->_helper->json($failureResponse);
+            }
+        }
     }
 
 }

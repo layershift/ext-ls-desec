@@ -188,7 +188,6 @@ class DomainUtils
             $pleskRecords = $rrset['records'];
             $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
 
-
             if(empty($desecRecords)) {
                 $summary['missing'][] = $rrset;
             } else {

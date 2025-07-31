@@ -1,6 +1,6 @@
 <?php
 
-namespace desec;
+namespace library\desec;
 
 use Exception;
 use library\utils\Settings;
