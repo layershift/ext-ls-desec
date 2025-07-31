@@ -25,7 +25,7 @@ class Dns
     }
 
     public function __construct() {
-        if(pm_Config::get("DESEC_API_TOKEN") !== "") {
+        if(pm_Config::get("DESEC_API_TOKEN") && pm_Config::get("DESEC_API_TOKEN") != "") {
             $this->token = pm_Config::get("DESEC_API_TOKEN");
         } else {
             $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
@@ -34,7 +34,6 @@ class Dns
 
     public function pushRRsetDesec($domainName, $payload, $method = 'POST', $maxRetries = 5) {
         $url = $this->API_BASE_URL . "domains/" . $domainName . "/rrsets/";
-        $attempt = 0;
 
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
 
@@ -72,7 +71,7 @@ class Dns
             if ($httpCode !== 429 && $httpCode < 400) {
                 return ["code" => $httpCode, "response" => json_decode($body)];
 
-                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
                 $this->getLogger()->debug("Debug ReGEX 1: " . preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches) . PHP_EOL);
 
@@ -85,7 +84,7 @@ class Dns
                 $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
                 sleep($retryAfter);
 
-                //Case 3: Other unhandled situations
+            //Case 3: Other unhandled situations
             } else {
                 $decodedBody = json_decode($body, true);
 
@@ -224,8 +223,7 @@ class Dns
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HEADER => true,
                 CURLOPT_HTTPHEADER => [
-//                    "Authorization: Token $this->token",
-                    "Authorization: Token something",
+                    "Authorization: Token $this->token",
                     "Content-Type: application/json"
                 ]
             ]);
@@ -249,7 +247,7 @@ class Dns
 
             //Case 1: Everything works as expected
             if (($httpCode !== 429 && $httpCode < 400) || ($httpCode === 404)) {
-                return ["code" => $httpCode, "response" => $response];
+                return ["code" => $httpCode, "response" => $body];
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {

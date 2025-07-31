@@ -40,7 +40,9 @@ export default class App extends React.PureComponent {
         } else {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
-                emptyViewDescription: "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini."
+                emptyViewDescription: "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
+                isFormOpen: true,
+                listLoading: false
             });
         }
 
@@ -211,7 +213,7 @@ export default class App extends React.PureComponent {
                         <Section title="deSEC API Token">
                             <FormFieldText
                                 label="API Token"
-                                size="md"
+                                size="lg"
                                 required
                                 onChange={(value) => this.setState({ inputToken: value })}
                             />

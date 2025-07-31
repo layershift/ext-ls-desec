@@ -6,7 +6,7 @@ require_once __DIR__ . '/../library/DomainUtils.php';
 require_once __DIR__ . "/../library/desec/Domains.php";
 require_once __DIR__ . "/../library/desec/Dns.php";
 
-use library\desec\Domains;
+use desec\Domains;
 use library\desec\Account;
 use library\utils\Settings;
 use library\DomainUtils;

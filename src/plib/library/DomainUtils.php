@@ -4,7 +4,7 @@ namespace library;
 
 use DateTime;
 use Exception;
-use desec\Dns;
+use library\desec\Dns;
 use desec\Domains;
 use library\utils\Settings;
 use Psr\Log\LoggerInterface;
@@ -100,7 +100,7 @@ class DomainUtils
                 $subname = $host;
             }
 
-            if ($type === 'NS' || $type === "SOA") { # excluding the NS, SOA - deSEC doesn't need them
+            if ($type === 'NS' || $type === "SOA" || str_contains("ns", $subname)) { # excluding the NS, SOA - deSEC doesn't need them
                 continue;
             }
 
@@ -188,6 +188,10 @@ class DomainUtils
             $pleskRecords = $rrset['records'];
             $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
 
+            $this->getLogger()->debug("Plesk Record: " . json_encode($pleskRecords) . PHP_EOL);
+            $this->getLogger()->debug("deSEC Record: " . json_encode($desecRecords) . PHP_EOL);
+
+
             if(empty($desecRecords)) {
                 $summary['missing'][] = $rrset;
             } else {
@@ -245,6 +249,9 @@ class DomainUtils
                     $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }
             } catch (Exception $e) {
+                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Failed to create the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                }
                 throw $e;
             }
         }

@@ -19,7 +19,7 @@ class Domains
 
     public function __construct()
     {
-        if (pm_Config::get("DESEC_API_TOKEN")) {
+        if (pm_Config::get("DESEC_API_TOKEN") && pm_Config::get("DESEC_API_TOKEN") != "") {
             $this->token = pm_Config::get("DESEC_API_TOKEN");
         } else {
             $this->token = pm_Settings::get(Settings::DESEC_TOKEN->value);
@@ -71,7 +71,7 @@ class Domains
 
             //Case 1: Everything works as expected
             if ($httpCode !== 429 && $httpCode < 400) {
-                return ["code" => $httpCode, "response" => json_decode($body)];
+                return ["code" => $httpCode, "response" => json_decode($body, true)];
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
@@ -151,7 +151,7 @@ class Domains
                 pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Registered");
                 pm_Domain::getByName($domain)->setSetting(Settings::AUTO_SYNC_STATUS->value, "true");
 
-                return ["code" => $httpCode, "response" => json_decode($body)];
+                return ["code" => $httpCode, "response" => $body];
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
@@ -182,7 +182,7 @@ class Domains
                     $errorMessage = 'Unknown error or invalid JSON';
                 }
 
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
+                throw new Exception("Error registering domains to deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }
 
@@ -220,7 +220,7 @@ class Domains
 
             //Case 1: Everything works as expected
             if ($httpCode !== 429 && $httpCode < 400) {
-                return ["code" => $httpCode, "response" => json_decode($body)];
+                return ["code" => $httpCode, "response" => $body];
 
                 //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
