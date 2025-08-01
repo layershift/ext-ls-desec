@@ -73,7 +73,7 @@ class Domains
             if ($httpCode !== 429 && $httpCode < 400) {
                 return ["code" => $httpCode, "response" => json_decode($body, true)];
 
-                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
                     $retryAfter = (int)$matches[1];
@@ -84,7 +84,7 @@ class Domains
                 $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
                 sleep($retryAfter);
 
-                //Case 3: Other unhandled situations
+            //Case 3: Other unhandled situations
             } else {
                 $decodedBody = json_decode($body, true);
 
@@ -153,7 +153,7 @@ class Domains
 
                 return ["code" => $httpCode, "response" => $body];
 
-                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
                     $retryAfter = (int)$matches[1];
@@ -164,7 +164,7 @@ class Domains
                 $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
                 sleep($retryAfter);
 
-                //Case 3: Other unhandled situations
+            //Case 3: Other unhandled situations
             } else {
                 $decodedBody = json_decode($body, true);
 
@@ -181,6 +181,7 @@ class Domains
                 } else {
                     $errorMessage = 'Unknown error or invalid JSON';
                 }
+
 
                 throw new Exception("Error registering domains to deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
@@ -222,7 +223,7 @@ class Domains
             if ($httpCode !== 429 && $httpCode < 400) {
                 return ["code" => $httpCode, "response" => $body];
 
-                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
                     $retryAfter = (int)$matches[1];
@@ -233,7 +234,7 @@ class Domains
                 $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
                 sleep($retryAfter);
 
-                //Case 3: Other unhandled situations
+            //Case 3: Other unhandled situations
             } else {
                 $decodedBody = json_decode($body, true);
 
@@ -250,6 +251,7 @@ class Domains
                 } else {
                     $errorMessage = 'Unknown error or invalid JSON';
                 }
+
                 throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
             }
         }

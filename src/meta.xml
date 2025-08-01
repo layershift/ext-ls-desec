@@ -2,8 +2,10 @@
 <module>
     <id>ls-desec-dns</id>
     <name>deSEC DNS Sync</name>
-    <description>This extension is used for syncing Plesk's DNS zone with the one from deSEC.</description>
+    <category>dns</category>
     <version>1.0.0</version>
+    <vendor>Layershift</vendor>
+    <url>https://github.com/layershift/ext-ls-desec</url>
     <plesk_min_version>18.0.71</plesk_min_version>
 
 </module>

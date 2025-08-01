@@ -53,10 +53,12 @@ class DomainUtils
 
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
 
-            if(isset($domainNameSet[$pm_Domain->getName()])) {
-                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Registered");
-            } else {
-                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
+            if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== "Error") {
+                if (isset($domainNameSet[$pm_Domain->getName()])) {
+                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Registered");
+                } else {
+                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
+                }
             }
 
             $domainsData[] = [

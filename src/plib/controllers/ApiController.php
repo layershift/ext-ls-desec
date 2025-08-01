@@ -163,10 +163,12 @@ class ApiController extends pm_Controller_Action
                 if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                     $this->getLogger()->error("Failed to retrieve domain retention setting. Error: " . $e);
                 }
-                $this->_helper->json([
-                    'success' => false,
-                    'error'   => 'Failed to retrieve domain retention setting.'
-                ]);
+
+                $failureResponse = [ "error" =>
+                    [ "message" => "Failed to save log verbosity setting. Error: " . $e->getMessage() ]
+                ];
+
+                $this->_helper->json($failureResponse);
             }
         }
     }
@@ -196,10 +198,12 @@ class ApiController extends pm_Controller_Action
                     if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                         $this->getLogger()->error("Error occurred during domain registration with deSEC: " . $e->getMessage());
                     }
+
+                    pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Error");
                     $this->getResponse()->setHttpResponseCode(500);
 
                     $failureResponse = [ "error" =>
-                        [ "message" =>  $e->getMessage() ]
+                        [ "message" =>  $e->getMessage(), "failed_domain" =>  pm_Domain::getByDomainId($domain_id)->getName() ]
                     ];
 
                     if(!empty($result_desec)) {
@@ -213,6 +217,7 @@ class ApiController extends pm_Controller_Action
             if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                 $this->getLogger()->debug("Successfully registered domains in deSEC:\n" . print_r($result_desec, true));
             }
+
             $this->_helper->json($result_desec);
 
         }

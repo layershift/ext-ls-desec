@@ -11,7 +11,7 @@ myAxios.interceptors.response.use(
             enrichedError.results = response.data.error.results;
             enrichedError.domainId = response.data.error?.domainId || "";
             enrichedError.timestamp = response.data.error?.timestamp || "";
-
+            enrichedError.failed_domain = response.data.error?.failed_domain || "";
             throw enrichedError;
         }
 

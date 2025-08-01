@@ -45,7 +45,6 @@ class Modules_LsDesecDns_EventListener implements EventListener
                 if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true") {
                     try {
                         $domain_name = $newValues["Domain Name"];
-
                         $utils = new DomainUtils();
 
                         $summary = $utils->syncDomain($domain_id);
@@ -53,6 +52,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, (new DateTime())->format('Y-m-d H:i:s T'));
 
                         $this->getLogger()->debug("[ event-listener ] Successfully synced the DNS zones of the domain(s) in deSEC:\n" . json_encode($summary, true));
+
                     } catch(Exception $e) {
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED(auto-sync)");
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, (new DateTime())->format('Y-m-d H:i:s T'));

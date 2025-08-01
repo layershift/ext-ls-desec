@@ -1,5 +1,4 @@
 import myAxios from "./utils/my-axios";
-import axios from 'axios';
 import React from 'react';
 import { states } from './utils/states';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
@@ -10,7 +9,7 @@ export const getDomainsInfo = async function () {
     this.setState({ listLoading: true });
 
     try {
-        const {data} = await axios.get(
+        const {data} = await myAxios.get(
             `${this.props.baseUrl}/api/get-domains-info`
         );
         const domainsArray = Array.isArray(data)
@@ -49,6 +48,8 @@ export const getDomainsInfo = async function () {
         }));
     }
 };
+
+// ================== Domain Retention ==================
 
 export const saveDomainRetentionStatus = async function () {
     const key = Math.random().toString();
@@ -96,15 +97,34 @@ export const saveDomainRetentionStatus = async function () {
 };
 
 export const getDomainRetentionStatus = async function () {
+    const key = Math.random().toString();
 
-    const {data} = await axios.get(
-        `${this.props.baseUrl}/api/get-domain-retention-status`
-    );
+    try {
+        const {data} = await myAxios.get(
+            `${this.props.baseUrl}/api/get-domain-retention-status`
+        );
 
-    this.setState({
-        retainDomainCheck: data["domain-retention"]
-    });
+        this.setState({
+            retainDomainCheck: data["domain-retention"]
+        });
+
+    } catch (error) {
+
+        this.setState(prevState => ({
+            retainDomainCheck: prevState.retainDomainCheck,
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key,
+                    intent: 'danger',
+                    message: `An error occurred while saving the log verbosity status.`
+                }
+            ]
+        }));
+    }
 };
+
+// ================== Log Verbosity ==================
 
 export const saveLogVerbosityStatus = async function () {
     const key = Math.random().toString();
@@ -115,7 +135,7 @@ export const saveLogVerbosityStatus = async function () {
         this.state.logVerbosityStatus === "true" ? "false" : "true";
 
     try {
-        const { data } = await axios.post(
+        const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/save-log-verbosity-status`,
             [flippedValue]
         );
@@ -152,19 +172,38 @@ export const saveLogVerbosityStatus = async function () {
 };
 
 export const getLogVerbosityStatus = async function () {
+    const key = Math.random().toString();
 
-    const {data} = await axios.get(
-        `${this.props.baseUrl}/api/get-log-verbosity-status`
-    );
+    try {
+        const {data} = await myAxios.get(
+            `${this.props.baseUrl}/api/get-log-verbosity-status`
+        );
 
-    this.setState({
-        logVerbosityStatus: data["log-verbosity"]
-    });
+        this.setState({
+            logVerbosityStatus: data["log-verbosity"]
+        });
+
+    } catch (error) {
+        console.log(error);
+        this.setState(prevState => ({
+            logVerbosityStatus: prevState.logVerbosityStatus,
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key,
+                    intent: 'danger',
+                    message: `An error occurred while retrieving the log verbosity status.`
+                }
+            ]
+        }));
+    }
 };
+
+// ================== deSEC API token ==================
 
 export const checkTokenExists = async function () {
     try {
-        const { data } = await axios.get(
+        const { data } = await myAxios.get(
             `${this.props.baseUrl}/api/retrieve-token`,
         );
 

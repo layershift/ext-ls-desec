@@ -129,14 +129,24 @@ export default class App extends React.PureComponent {
                 key: 'dns-status',
                 title: "Plesk DNS Status",
                 render: row => row['dns-status'] ? <Label intent="success">Active</Label> : <Label intent="warning">Disabled</Label>
+
             },
+
             {
                 key: 'domain-desec-status',
                 title: "deSEC Status",
-                render: row => row['desec-status'] === "Registered"
-                    ? <Label intent="success">Registered</Label>
-                    : <Label intent="warning">Not Registered</Label>
+                render: row => {
+                    console.log(row["desec-status"])
+                    if(row['desec-status'] === "Registered") {
+                        return (<Label intent="success">Registered</Label>)
+                    } else if(row['desec-status'] === "Error") {
+                        return (<Label intent="danger">Error</Label>)
+                    } else {
+                        return (<Label intent="warning">Not Registered</Label>)
+                    }
+                }
             },
+
             {
                 key: 'auto-sync-desec',
                 title: 'Auto-Sync',
@@ -176,12 +186,13 @@ export default class App extends React.PureComponent {
             inputToken
         } = this.state;
 
+        console.log(domains)
         const filtered = domains.filter(d => d['domain-name']?.toLowerCase().includes(searchQuery.trim().toLowerCase()));
         const allSelected = filtered.length > 0 && selectedDomains.size === filtered.length;
         const isIndeterminate = selectedDomains.size > 0 && selectedDomains.size < filtered.length;
         const selectedDomainObjects = domains.filter(d => selectedDomains.has(d['domain-id']));
         const allSelectedAreRegistered = selectedDomainObjects.every(d => d['desec-status'] === 'Registered');
-        const allSelectedAreNotRegistered = selectedDomainObjects.every(d => d['desec-status'] === 'Not Registered');
+        const allSelectedAreNotRegistered = selectedDomainObjects.every(d => d['desec-status'] === 'Not Registered' || d['desec-status'] === 'Error');
         const sorted = this.getFilteredSortedDomains();
         const columns = this.renderColumns(allSelected, isIndeterminate, selectedDomains);
 
@@ -191,6 +202,7 @@ export default class App extends React.PureComponent {
                     <Drawer
                         title="deSEC Credentials"
                         size="md"
+                        description={""}
                         isOpen={isFormOpen}
                         onClose={() => {
                             this.setState(({
@@ -209,6 +221,7 @@ export default class App extends React.PureComponent {
                             state: formState,
                             hideButton: true
                         }}
+                        closingConfirmation={true}
                     >
                         <Section title="deSEC API Token">
                             <FormFieldText

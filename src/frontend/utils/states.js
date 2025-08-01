@@ -29,7 +29,7 @@ export const states= {
     tokenStatus: "true",
     formState: "",
     isFormOpen: true,
-    emptyViewDescription: "The domain that you are looking for doesn't exist or there aren't any domains hosted on this Plesk instance.",
+    emptyViewDescription: "The domain(s) that you are looking for doesn't/don't exist or there aren't any domains hosted on this Plesk instance.", // TODO ask Damien 2morrow
     emptyViewTitle: "No domains!",
     inputToken: "",
     refreshToggle: true

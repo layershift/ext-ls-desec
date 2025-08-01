@@ -249,10 +249,8 @@ class Dns
             if (($httpCode !== 429 && $httpCode < 400) || ($httpCode === 404)) {
                 return ["code" => $httpCode, "response" => $body];
 
-                //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
+            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
             } else if ($httpCode == 429) {
-                $this->getLogger()->debug("Debug ReGEX 3: " . preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches));
-                $this->getLogger()->debug("Headers: " . $headerText . PHP_EOL);
                 if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
                     $retryAfter = (int)$matches[1] + .5;
                 } else {

@@ -8,56 +8,61 @@ export const handleAddDomainToDesec = async function () {
     this.setState({ addButtonState: 'loading' });
     const updatedToasts = [];
 
-    const updateDomainState = (domains, updateMap) =>
+    const updateDomainState = (domains, updateMap, errorMessage= "") =>
         domains.map(domain => {
             const name = domain["domain-name"];
-            if(!updateMap[name]) return domain;
+            if (!updateMap[name]) return domain;
 
             updatedToasts.push({
                 key: Math.random().toString(),
-                intent: "success",
-                message: `The domain "${name}" was successfully registered with deSEC.`
+                intent: updateMap[name]["desec-status"] === "Registered" ? "success" : "danger",
+                message:
+                    updateMap[name]["desec-status"] === "Registered"
+                        ? `The domain "${name}" was successfully registered with deSEC.`
+                        : `${errorMessage}`
             });
 
             return {
                 ...domain,
-                "auto-sync-status": "true",
-                "desec-status": "Registered"
+                "auto-sync-status": updateMap[name]["desec-status"] === "Registered" ? "true" : "false",
+                "desec-status": updateMap[name]["desec-status"]
             };
-        })
-
+        });
 
     try {
-        const {data} = await myAxios.post(
+        const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/register-domain`,
             [...this.state.selectedDomains],
             { validateStatus: () => true }
         );
 
+        // Map the response into the format expected by updateDomainState
+        const successMap = {};
+        for (const name in data) {
+            successMap[name] = { "desec-status": "Registered" };
+        }
 
         this.setState(prevState => ({
             addButtonState: '',
-            domains: updateDomainState(prevState.domains, data),
+            domains: updateDomainState(prevState.domains, successMap),
             toasts: [...prevState.toasts, ...updatedToasts]
-        }))
-
+        }));
 
     } catch (error) {
-        updatedToasts.push({
-            key: Math.random().toString(),
-            intent: "danger",
-            message: error?.message || "An unknown error occurred."
-        });
-
+        const failedDomains = {};
         const errorResults = error?.results || {};
+        const failed = error?.failed_domain;
+
+        if (failed) {
+            failedDomains[failed] = { "desec-status": "Error" };
+        }
 
         this.setState(prevState => ({
             addButtonState: '',
-            domains: updateDomainState(prevState.domains, errorResults),
+            domains: updateDomainState(prevState.domains, failedDomains, error.message),
             toasts: [...prevState.toasts, ...updatedToasts]
         }));
     }
-
 };
 
 
