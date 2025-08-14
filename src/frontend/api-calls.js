@@ -184,7 +184,6 @@ export const getLogVerbosityStatus = async function () {
         });
 
     } catch (error) {
-        console.log(error);
         this.setState(prevState => ({
             logVerbosityStatus: prevState.logVerbosityStatus,
             toasts: [

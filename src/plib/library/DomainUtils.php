@@ -102,7 +102,11 @@ class DomainUtils
                 $subname = $host;
             }
 
-            if ($type === 'NS' || $type === "SOA" || str_contains("ns", $subname)) { # excluding the NS, SOA - deSEC doesn't need them
+            $key = $this->buildKey($type, $subname);
+            $this->getLogger()->debug("Key  " . $key . " for " . $type);
+
+            if ($type === 'NS' || $type === "SOA") { # excluding the NS, SOA - deSEC doesn't need them
+                $this->getLogger()->debug("Record excluded(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 continue;
             }
 
@@ -118,9 +122,11 @@ class DomainUtils
                 $ttl = 3600;
             }
 
-            $key = $this->buildKey($type, $subname);
+
 
             if (!isset($rrsets[$key])) { # grouping the records by a custom key
+
+                $this->getLogger()->debug("Record included(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 $rrsets[$key] = [
                     'subname' => $subname,
                     'type' => $type,

@@ -25,6 +25,7 @@ class ApiController extends pm_Controller_Action
 
         return $logger;
     }
+
     public function getDomainsInfoAction(): void
     {
 
@@ -41,6 +42,7 @@ class ApiController extends pm_Controller_Action
             if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                 $this->getLogger()->error($e->getMessage());
             }
+            
             $failureResponse = [ "error" =>
                 [ "message" =>  $e->getMessage() ]
             ];
