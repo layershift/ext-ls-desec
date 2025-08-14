@@ -266,22 +266,28 @@ class DomainUtils
 
         if (count($summary['modified']) > 0) {
             try {
-                $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PUT');
+                $response = $desec->pushRRsetDesec($domainName, $summary['modified'], 'PUT');
                 if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                     $this->getLogger()->debug("Successfully modified RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }
             } catch (Exception $e) {
+                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Failed to modify the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                }
                 throw $e;
             }
         }
 
         if (count($summary['deleted']) > 0) {
             try {
-                $response = $desec->pushRRsetDesec($domainName, $summary['missing'], 'PATCH');
+                $response = $desec->pushRRsetDesec($domainName, $summary['deleted'], 'PATCH');
                 if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
                     $this->getLogger()->debug("Successfully deleted the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
                 }
             } catch (Exception $e) {
+                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
+                    $this->getLogger()->debug("Failed to delete the RRsets from deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+                }
                 throw $e;
             }
         }
