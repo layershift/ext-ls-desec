@@ -1,95 +1,54 @@
 <?php
 
-namespace library\desec;
+namespace PleskExt\Desec;
 
+
+##### Plesk Classes Imports #####
+use PleskExt\Desec\Utils\DesecApiClient;
+use PleskExt\Utils\MyLogger;
+
+##### Plesk
 use Exception;
-use pm_Bootstrap;
 use Psr\Log\LoggerInterface;
+
 
 class Account
 {
+    private MyLogger $myLogger;
+    private DesecApiClient $client;
 
-    private $logger;
-    private $API_BASE_URL = "https://desec.io/api/v1/";
-
-    private function getLogger()
+    public function __construct()
     {
-        if (!$this->logger) {
-            $this->logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
-        }
-
-        return $this->logger;
+        $this->myLogger = new MyLogger();
     }
 
-    public function validateToken($token, $maxRetries = 10) {
-        $url = $this->API_BASE_URL . "auth/account/";
+    public function validateTokenFormat(string $token): bool {
+        return (bool)preg_match("/^[a-km-zA-HJ-NP-Z1-9]{28}$/", $token);
+    }
 
-        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-
-            // Settings up curl for what is about to come
-            $curl = curl_init($url);
-            curl_setopt_array($curl, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => [
-                    "Authorization: Token $token",
-                    "Content-Type: application/json"
-                ]
-            ]);
-
-            $response = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
-            curl_close($curl);
-
-            // Getting the headers and the body - deSEC response
-            $headerText = substr($response, 0, $headerSize);
-            $body = substr($response, $headerSize);
-
-            $this->getLogger()->debug("Response: " . $response . " " . $token);
-
-            //Case 1: Everything works as expected
-            if ($httpCode !== 401 && $httpCode < 500) {
-                return ["token" => "true"];
-
-            //Case 2: HTTP code 429 occurs, therefore I will have to look for the "Retry-After" header
-            } else if ($httpCode == 429) {
-                if (preg_match('/Retry-After:\s*(\d+)/i', $headerText, $matches)) {
-                    $retryAfter = (int)$matches[1];
-                } else {
-                    $retryAfter = 5; // fallback delay
-                }
-
-                $this->getLogger()->debug("Requests/sec limit exceeded. Waiting " . $retryAfter . " seconds and then will try again!");
-                sleep($retryAfter);
-
-            //Case 3: Token gets invalidated
-            } else if($httpCode === 401) {
-                return ["token" => "false"];
-
-            //Case 4: Other unhandled situations
-            } else {
-                $decodedBody = json_decode($body, true);
-
-                if(is_array($decodedBody)) {
-                    $firstValue = array_values($decodedBody)[0];
-
-                    if(is_array($firstValue)) {
-                        // Try to extract the error message from the nested array
-                        $nestedFirst = array_values($firstValue)[0];
-                        $errorMessage = is_string($nestedFirst) ? $nestedFirst : json_encode($nestedFirst);
-                    } else {
-                        $errorMessage = is_string($firstValue) ? $firstValue : json_encode($firstValue);
-                    }
-                } else {
-                    $errorMessage = 'Unknown error or invalid JSON';
-                }
-
-                throw new Exception("Error retrieving domains from deSEC! HTTP {$httpCode}: {$errorMessage}");
-            }
-
+    /**
+     * @throws Exception
+     */
+    public function validateToken(string $token): array
+    {
+        $client = new DesecApiClient($token);
+        if(!$this->validateTokenFormat($token)) {
+            $this->myLogger->log("debug", "The provided token is invalid! Token either doesn't respect the reGEX format or is too long!");
+            return [ "token" => "false" ];
         }
 
-        throw new Exception("Rate limit hit. Max retries ({$maxRetries}) exceeded.");
+        $res = $client->request('GET', 'auth/account/');
 
+        if ($res['code'] === 401) {
+            $this->myLogger->log("debug", "The provided token is invalid! Response: " . PHP_EOL . json_encode($res, JSON_PRETTY_PRINT));
+            return ["token" => "false"];
+        }
+
+        if ($res['code'] < 500) {
+            $this->myLogger->log("debug", "The provided token is valid!");
+            return ["token" => "true"];
+        }
+
+        throw new Exception("Unexpected response validating token. HTTP {$res['code']}");
     }
 }

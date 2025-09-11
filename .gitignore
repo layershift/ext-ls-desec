@@ -1,6 +1,9 @@
 tests/
 node_modules/
 .idea/
-plesk-desec-ext.zip
-yarn.lock
+
+
+
+*.lock
 package.xml
+*.zip

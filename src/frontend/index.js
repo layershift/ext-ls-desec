@@ -2,7 +2,7 @@ import React from 'react';
 import { propTypes } from './utils/constants';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { handleSortByChange, handleSortDirectionChange } from "./elements/SortingMenu/utils";
-import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, getLogVerbosityStatus, saveLogVerbosityStatus, checkTokenExists, validateToken} from './api-calls';
+import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, checkTokenExists, validateToken} from './api-calls';
 import DomainListToolbar from "elements/Toolbar/Toolbar";
 import { states } from './utils/states';
 import { handleAddDomainToDesec, handleDNSRecordsSync, handleSearchChange } from './elements/Toolbar/utils';
@@ -47,8 +47,6 @@ export default class App extends React.PureComponent {
         }
 
          await getDomainRetentionStatus.call(this);
-         await getLogVerbosityStatus.call(this);
-
     }
 
     getFilteredSortedDomains() {
@@ -136,7 +134,6 @@ export default class App extends React.PureComponent {
                 key: 'domain-desec-status',
                 title: "deSEC Status",
                 render: row => {
-                    console.log(row["desec-status"])
                     if(row['desec-status'] === "Registered") {
                         return (<Label intent="success">Registered</Label>)
                     } else if(row['desec-status'] === "Error") {
@@ -153,7 +150,7 @@ export default class App extends React.PureComponent {
                 render: row => {
                     const domainId = row["domain-id"];
                     const enabled = row["auto-sync-status"] === "true" && row["desec-status"] === "Registered";
-                    const disabled = !row["dns-status"] || row["desec-status"] === "Not Registered";
+                    const disabled = !row["dns-status"] || row["desec-status"] === "Not Registered" || row["desec-status"] === "Error";
                     return (
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <Switch checked={enabled} onChange={() => handleSyncChange.call(this, domainId)} disabled={disabled} />
@@ -177,16 +174,13 @@ export default class App extends React.PureComponent {
             addButtonState,
             syncButtonState,
             searchQuery,
-            logVerbosityStatus,
             tokenStatus,
             formState,
             isFormOpen,
             emptyViewTitle,
             emptyViewDescription,
-            inputToken
         } = this.state;
 
-        console.log(domains)
         const filtered = domains.filter(d => d['domain-name']?.toLowerCase().includes(searchQuery.trim().toLowerCase()));
         const allSelected = filtered.length > 0 && selectedDomains.size === filtered.length;
         const isIndeterminate = selectedDomains.size > 0 && selectedDomains.size < filtered.length;
@@ -281,14 +275,6 @@ export default class App extends React.PureComponent {
                                     title="Domain retention in deSEC"
                                     description="Keep your DNS zone active in deSEC even if the domain is removed from Plesk."
                                     fullDescription={<Paragraph>This option's state will reflect whether or not you prefer that a domain, if deleted from Plesk, to be retained (along with its DNS zone) in deSEC.</Paragraph>}
-                                    style={{ width: 400 }}
-                                />
-                                <SwitchesPanelItem
-                                    switchProps={{ checked: logVerbosityStatus === "true" }}
-                                    onChange={saveLogVerbosityStatus.bind(this)}
-                                    title="Log Verbosity"
-                                    description="Log verbosity controls how much of your actions within the extension are getting logged."
-                                    fullDescription={<Paragraph>Log verbosity refers to the level of detail included in log messages. Higher verbosity levels provide more detailed information for debugging, while lower levels show only critical or essential events.</Paragraph>}
                                     style={{ width: 400 }}
                                 />
                             </div>

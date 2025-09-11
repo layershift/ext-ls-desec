@@ -1,30 +1,29 @@
 <?php
 
-namespace library;
+namespace PleskExt\Utils;
 
+
+##### Custom Classes Imports #####
+use PleskExt\Desec\Dns;
+use PleskExt\Desec\Domains;
+use PleskExt\Utils\MyLogger;
+
+##### Plesk Classes Imports #####
 use DateTime;
 use Exception;
-use library\desec\Dns;
-use desec\Domains;
-use library\utils\Settings;
-use Psr\Log\LoggerInterface;
 use pm_Bootstrap;
 use pm_Domain;
 use pm_Settings;
-
-require_once __DIR__ . '/desec/Dns.php';
-require_once __DIR__ . '/utils/Settings.php';
+use Psr\Log\LoggerInterface;
 
 class DomainUtils
 {
-    private $logger;
-    //Lazy loading the logger
-    public function getLogger() {
-        if (!$this->logger) {
-            $logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
-        }
+    private MyLogger $myLogger;
+    private Domains $desecDomains;
 
-        return $logger;
+    public function __construct() {
+        $this->myLogger = new MyLogger();
+        $this->desecDomains = new Domains();
     }
 
     /*
@@ -32,32 +31,27 @@ class DomainUtils
      * @var Settings $enum
      */
 
-    public function getPleskDomains()
+    /**
+     * @throws \pm_Exception
+     * @throws Exception
+     */
+    public function getPleskDomains(): array
     {
         $domainsData = array();
-        $desec = new Domains();
 
-        // I am retrieving all the domains that are registered with deSEC and if an errors occurs, I rethrow it
-        // to the ApiController
-        try {
-            $domains = $desec->getDesecDomains();
-
-            $domainNameSet = array_fill_keys(
-                array_column($domains['response'], 'name'),
-                true
-            );
-
-        } catch(Exception $e) {
-            throw $e;
-        }
+        $domains = $this->desecDomains->getDesecDomains();
+        $domainNameSet = array_fill_keys(
+            array_column($domains['response'], 'name'),
+            true
+        );
 
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
 
-            if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== "Error") {
+            if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== Status::STATUS_ERROR->value) {
                 if (isset($domainNameSet[$pm_Domain->getName()])) {
-                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Registered");
+                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
                 } else {
-                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
+                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_NOT_REGISTERED->value);
                 }
             }
 
@@ -72,7 +66,7 @@ class DomainUtils
             ];
         }
 
-
+        $this->myLogger->log("debug", "Data that was retrieved about the domains: " . PHP_EOL . print_r($domainsData, true));
         return $domainsData;
     }
 
@@ -103,10 +97,10 @@ class DomainUtils
             }
 
             $key = $this->buildKey($type, $subname);
-            $this->getLogger()->debug("Key  " . $key . " for " . $type);
+            $this->myLogger->log("debug","Key  " . $key . " for " . $type);
 
             if ($type === 'NS' || $type === "SOA") { # excluding the NS, SOA - deSEC doesn't need them
-                $this->getLogger()->debug("Record excluded(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
+                $this->myLogger->log("debug","Record excluded(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 continue;
             }
 
@@ -122,11 +116,9 @@ class DomainUtils
                 $ttl = 3600;
             }
 
-
-
             if (!isset($rrsets[$key])) { # grouping the records by a custom key
 
-                $this->getLogger()->debug("Record included(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
+                $this->myLogger->log("debug","Record included(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 $rrsets[$key] = [
                     'subname' => $subname,
                     'type' => $type,
@@ -165,6 +157,7 @@ class DomainUtils
 
     /**
      * @throws \pm_Exception
+     * @throws Exception
      */
     public function syncDomain($domainId)
     {
@@ -178,7 +171,7 @@ class DomainUtils
 
         $desec = new Dns();
         $pleskRrsets = $this->getDNSRecords($domainId);
-        $summary['timestamp'] = (new DateTime())->format('Y-m-d H:i:s T');
+        $summary['timestamp'] = new DateTime()->format('Y-m-d H:i:s T');
         $domainName = pm_Domain::getByDomainId($domainId)->getName();
 
         try {
@@ -190,14 +183,18 @@ class DomainUtils
 
         foreach ($pleskRrsets as $rrset) {
 
+            $this->myLogger->log("debug", "Something something 1" . $domainName . " " . $rrset['subname'] . " " . $rrset['type']);
+
             $response = $desec->getSpecificRRset($domainName, $rrset['subname'], $rrset['type']);
             $desecRRset = json_decode($response['response'], true);
+
+            $this->myLogger->log("debug", "Something something 2");
 
             $pleskRecords = $rrset['records'];
             $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
 
-            $this->getLogger()->debug("Plesk Record: " . json_encode($pleskRecords) . PHP_EOL);
-            $this->getLogger()->debug("deSEC Record: " . json_encode($desecRecords) . PHP_EOL);
+            $this->myLogger->log("debug", "Plesk Records: " . json_encode($pleskRecords) . PHP_EOL);
+            $this->myLogger->log("debug", "deSEC Records: " . json_encode($desecRecords) . PHP_EOL);
 
 
             if(empty($desecRecords)) {
@@ -216,10 +213,8 @@ class DomainUtils
 
         }
 
-        if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-            $this->getLogger()->debug("Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);
-            $this->getLogger()->debug("Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
-        }
+        $this->myLogger->log("debug","Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);
+        $this->myLogger->log("debug","Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
 
         if(!empty($allDesecRRsets['response']) ) {
 
@@ -245,21 +240,17 @@ class DomainUtils
                 }
             }
 
-            if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->debug("Removable DNS records: " . json_encode($summary['deleted'], true) . PHP_EOL);
-            }
+            $this->myLogger->log("debug","Removable DNS records: " . json_encode($summary['deleted'], true) . PHP_EOL);
+
         }
 
         if (count($summary['missing']) > 0) {
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['missing']);
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+                $this->myLogger->log("debug","Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+
             } catch (Exception $e) {
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Failed to create the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+                $this->myLogger->log("debug","Failed to create the missing RRsets in deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
                 throw $e;
             }
         }
@@ -267,13 +258,11 @@ class DomainUtils
         if (count($summary['modified']) > 0) {
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['modified'], 'PUT');
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully modified RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+                $this->myLogger->log("debug","Successfully modified RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+
             } catch (Exception $e) {
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Failed to modify the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+
+                $this->myLogger->log("debug","Failed to modify the RRsets in deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
                 throw $e;
             }
         }
@@ -281,13 +270,11 @@ class DomainUtils
         if (count($summary['deleted']) > 0) {
             try {
                 $response = $desec->pushRRsetDesec($domainName, $summary['deleted'], 'PATCH');
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully deleted the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+                $this->myLogger->log("debug","Successfully deleted the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+
             } catch (Exception $e) {
-                if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Failed to delete the RRsets from deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-                }
+
+                $this->myLogger->log("debug","Failed to delete the RRsets from deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
                 throw $e;
             }
         }

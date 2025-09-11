@@ -49,17 +49,20 @@ export const handleAddDomainToDesec = async function () {
         }));
 
     } catch (error) {
-        const failedDomains = {};
-        const errorResults = error?.results || {};
+        const updateMap = {};
+        const partialResults = error?.results || {};
         const failed = error?.failed_domain;
 
-        if (failed) {
-            failedDomains[failed] = { "desec-status": "Error" };
+        Object.keys(partialResults).forEach(name => {
+            updateMap[name] = { "desec-status": "Registered" }
+        })
+        if(failed) {
+            updateMap[failed] = { "desec-status": "Error" }
         }
 
         this.setState(prevState => ({
             addButtonState: '',
-            domains: updateDomainState(prevState.domains, failedDomains, error.message),
+            domains: updateDomainState(prevState.domains, updateMap, error.message),
             toasts: [...prevState.toasts, ...updatedToasts]
         }));
     }
@@ -214,7 +217,6 @@ export const saveAutoSyncStatus = async function (domainSyncStatus) {
         }
 
     } catch (error) {
-        console.error(error);
         revertAutoSyncStatus.call(this, domainSyncStatus);
         this.setState(prevState => ({
             toasts: [
@@ -230,6 +232,5 @@ export const saveAutoSyncStatus = async function (domainSyncStatus) {
 };
 
 export const handleSearchChange = function (e) {
-    console.log()
     this.setState({searchQuery: e.target.value});
 };

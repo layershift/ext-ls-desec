@@ -1,27 +1,17 @@
 <?php
 
-require_once __DIR__ . '/utils/Settings.php';
-require_once __DIR__ . '/desec/Domains.php';
-require_once __DIR__ . '/DomainUtils.php';
+require_once pm_Context::getPlibDir() . 'bootstrap.php';
 
-use desec\Domains;
-use library\DomainUtils;
-use library\utils\Settings;
+##### Custom Classes Imports #####
+use PleskExt\Desec\Domains;
+use PleskExt\Utils\Settings;
+use PleskExt\Utils\DomainUtils;
 use Psr\Log\LoggerInterface;
+use PleskExt\Utils\MyLogger;
+##### Plesk Classes Imports #####
 
 class Modules_LsDesecDns_EventListener implements EventListener
 {
-
-    private $logger;
-
-    public function getLogger()
-    {
-        if (!$this->logger) {
-            $logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
-        }
-
-        return $logger;
-    }
 
     public function filterActions()
     {
@@ -36,10 +26,11 @@ class Modules_LsDesecDns_EventListener implements EventListener
      */
     public function handleEvent($objectType, $objectId, $action, $oldValues, $newValues)
     {
+        $logger = new MyLogger();
 
         switch($action) {
             case 'domain_dns_update':
-                $this->getLogger()->debug("[ event-listener ] Domain's DNS zone was updated!");
+                $logger->log("debug","[ event-listener ] Domain's DNS zone was updated!");
                 $domain_id = $objectId;
 
                 if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true") {
@@ -49,22 +40,22 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
                         $summary = $utils->syncDomain($domain_id);
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS(auto-sync)");
-                        pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, (new DateTime())->format('Y-m-d H:i:s T'));
+                        pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
 
-                        $this->getLogger()->debug("[ event-listener ] Successfully synced the DNS zones of the domain(s) in deSEC:\n" . json_encode($summary, true));
+                        $logger->log("debug", "[ event-listener ] Successfully synced the DNS zone of the " . $domain_name . " in deSEC:\n" . json_encode($summary, true));
 
                     } catch(Exception $e) {
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED(auto-sync)");
-                        pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, (new DateTime())->format('Y-m-d H:i:s T'));
+                        pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
 
-                        $this->getLogger()->error("[ event-listener ] Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
+                        $logger->log("error","[ event-listener ] Error occurred during DNS synchronization with deSEC of " . $domain_name . ": " . $e->getMessage());
                     }
                 }
                 break;
 
             case 'domain_delete':
                 $domain_name = $oldValues["Domain Name"];
-                $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was deleted!");
+                $logger->log("debug","[ event-listener ] Domain " . $domain_name . " was deleted!");
 
                 $domain_id = $objectId;
                 if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false") &&
@@ -73,10 +64,10 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
                     try {
                         $response = $desec->deleteDomain($domain_name);
-                        $this->getLogger()->debug("[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC! Details: " . json_encode($response, true));
+                        $logger->log("debug","[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC! Details: " . json_encode($response, true));
 
                     } catch(Exception $e) {
-                        $this->getLogger()->error("[ event-listener ]" . $e->getMessage());
+                        $logger->log("error","[ event-listener ]" . $e->getMessage());
                     }
                 }
                 break;

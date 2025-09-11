@@ -1,0 +1,21 @@
+{
+  "name": "layershift/ext-ls-desec",
+  "type": "project",
+  "config": {
+    "vendor-dir": "vendor/"
+  },
+  "autoload": {
+    "psr-4": {
+      "PleskExt\\Desec\\": "library/desec/",
+      "PleskExt\\Desec\\Utils\\": "library/desec/utils",
+      "PleskExt\\Utils\\": "library/utils/",
+      "PleskExt\\Utils\\Validation\\": "library/utils/validation"
+    },
+    "classmap": [
+      "library/EventListener.php"
+    ]
+  },
+  "require": {
+    "php": ">=8.3"
+  }
+}

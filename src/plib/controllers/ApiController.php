@@ -1,205 +1,169 @@
 <?php
 
-require_once __DIR__ . '/../library/utils/Settings.php';
-require_once __DIR__ . '/../library/desec/Account.php';
-require_once __DIR__ . '/../library/DomainUtils.php';
-require_once __DIR__ . "/../library/desec/Domains.php";
-require_once __DIR__ . "/../library/desec/Dns.php";
+require_once pm_Context::getPlibDir() . 'bootstrap.php';
 
-use desec\Domains;
-use library\desec\Account;
-use library\utils\Settings;
-use library\DomainUtils;
-use Psr\Log\LoggerInterface;
+##### Custom Classes Imports #####
+use PleksExt\Utils\Validation\InputSanitizer;
+use PleskExt\Desec\Domains;
+use PleskExt\Desec\Account;
+use PleskExt\Utils\DomainUtils;
+use PleskExt\Utils\Settings;
+use PleskExt\Utils\MyLogger;
 
-
+##### Plesk Classes Imports #####
 
 class ApiController extends pm_Controller_Action
 {
-    private $logger;
 
-    public function getLogger() {
-        if (!$this->logger) {
-            $logger = pm_Bootstrap::getContainer()->get(LoggerInterface::class);
-        }
+    protected $_accessLevel = 'admin';
 
-        return $logger;
+    private DomainUtils $domainUtils;
+    private Domains $desecDomains;
+    private MyLogger $myLogger;
+
+    public function __construct(Zend_Controller_Request_Abstract $request, Zend_Controller_Response_Abstract $response, array $invokeArgs = array())
+    {
+        parent::__construct($request, $response, $invokeArgs);
+        $this->domainUtils = new DomainUtils();
+        $this->desecDomains = new Domains();
+        $this->myLogger = new MyLogger();
     }
 
     public function getDomainsInfoAction(): void
     {
-
         try {
-            $pleskDomains = new DomainUtils();
-            if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->debug("Successfully retrieved the informations regarding the domains!");
+            if ($this->getRequest()->isGet()) {
+                $domainInfo = $this->domainUtils->getPleskDomains();
+                $this->myLogger->log("info", "Successfully retrieved the informations regarding the domains!");
+                $this->_helper->json($domainInfo);
             }
-
-            $this->_helper->json($pleskDomains->getPleskDomains());
-
 
         } catch (Exception $e) {
-            if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->error($e->getMessage());
-            }
-            
-            $failureResponse = [ "error" =>
-                [ "message" =>  $e->getMessage() ]
+
+            $this->myLogger->log("error", $e->getMessage());
+            $failureResponse = ["error" =>
+                ["message" => $e->getMessage()]
             ];
 
             $this->_helper->json($failureResponse);
         }
+
     }
+
 
     // ################ Domain Retention Methods ################
 
     public function saveDomainRetentionStatusAction(): void
     {
 
-        if ($this->getRequest()->isPost()) {
-            $responseArray = json_decode(file_get_contents('php://input'), true);
+        try {
+            if ($this->getRequest()->isPost()) {
 
-            try {
-                pm_Settings::set(Settings::DOMAIN_RETENTION->value, $responseArray[0]);
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully saved the domain retention status: " . json_encode($responseArray));
-                }
-            } catch (Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error("Failed to save domain retention setting. Error: " . $e->getMessage());
-                }
+                $data = InputSanitizer::readJsonBody();
+                $status = InputSanitizer::normalizeBool($data[0]);
 
-                $failureResponse = [ "error" =>
-                    [ "message" =>  "Failed to save domain retention setting. Error: " . $e->getMessage() ]
-                ];
+                pm_Settings::set(Settings::DOMAIN_RETENTION->value, $status);
+                $this->myLogger->log("info", "Successfully saved the domain retention status! Current Status: " . $status);
 
-                $this->_helper->json($failureResponse);
             }
+        } catch (Exception $e) {
+            $this->myLogger->log("error", "Failed to save domain retention setting. Error: " . $e->getMessage());
 
-            $this->_helper->json(['success' => true]);
+            $failureResponse = [ "error" =>
+                [ "message" =>  "Failed to save domain retention setting. Error: " . $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
         }
+
+        $this->_helper->json(['success' => true]);
     }
+
 
     public function getDomainRetentionStatusAction(): void {
 
-        if ($this->getRequest()->isGet()) {
-            try {
-                $this->_helper->json(['success' => true, 'domain-retention' => pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false")]);
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully retrieved the domain retention status!");
-                }
-            } catch (Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error("Failed to retrieve domain retention setting. Error: " . $e);
-                }
-                $this->_helper->json([
-                    'success' => false,
-                    'error'   => 'Failed to retrieve domain retention setting.'
-                ]);
+
+        try {
+            if ($this->getRequest()->isGet()) {
+
+                $domainRetentionStatus = pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false");
+                $this->_helper->json(['success' => true, 'domain-retention' => $domainRetentionStatus]);
+                $this->myLogger->log("info", "Successfully retrieved the domain retention status! Current Status: " . $domainRetentionStatus);
             }
+
+        } catch (Exception $e) {
+            $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());
+
+            $this->_helper->json([
+                'success' => false,
+                'error'   => 'Failed to retrieve domain retention setting.'
+            ]);
         }
     }
+
 
     // ################ Last-Sync & Auto-Sync Methods ################
 
     public function saveAutoSyncStatusAction()
     {
-        if ($this->getRequest()->isPost()) {
-            $responseArray = json_decode(file_get_contents('php://input'), true);
 
-            try {
-                foreach($responseArray as $id => $status) {
-                    $domain_obj = pm_Domain::getByDomainId($id);
+        try {
+            if ($this->getRequest()->isPost()) {
+                $data = InputSanitizer::readJsonBody();
+
+                if ($data === [] || array_values($data) === $data) {
+                    throw new Exception("Invalid data format!");
+                }
+
+                foreach ($data as $id => $statusRaw) {
+                    $domainId = InputSanitizer::validateDomainId($id);
+                    $status = InputSanitizer::normalizeBool($statusRaw);
+
+                    $domain_obj = pm_Domain::getByDomainId($domainId);
                     $domain_obj->setSetting(Settings::AUTO_SYNC_STATUS->value, $status);
+                    $this->myLogger->log("info", "Successfully saved the domain's auto-sync status for  " . $domain_obj->getName() . ". Current Status: " . $status);
                 }
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully saved domain(s) auto-sync status setting.");
-                }
-            } catch (Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error("Failed to save domain(s) auto-sync status setting. Error: " . $e);
-                }
-                $this->_helper->json([
-                    'success' => false,
-                    'error'   => 'Failed to save domain(s) auto-sync status setting.'
-                ]);
             }
+        } catch (Exception $e) {
+            $this->myLogger->log("info", "Failed to save the auto-sync status! Error: " . $e->getMessage());
 
-            $this->_helper->json(['success' => true]);
+            $this->_helper->json([
+                'success' => false,
+                'error'   => 'Failed to save domain(s) auto-sync status setting.'
+            ]);
         }
+
+        $this->_helper->json(['success' => true]);
     }
 
-    // ################ Log Verbosity Methods ################
-    public function saveLogVerbosityStatusAction()
-    {
-        if ($this->getRequest()->isPost()) {
-            $responseArray = json_decode(file_get_contents('php://input'), true);
-
-            try {
-                pm_Settings::set(Settings::LOG_VERBOSITY->value, $responseArray[0]);
-                $this->getLogger()->debug("Successfully saved the log verbosity status: " . json_encode($responseArray));
-
-            } catch (Exception $e) {
-                $this->getLogger()->error("Failed to save log verbosity setting. Error: " . $e->getMessage());
-
-                $failureResponse = [ "error" =>
-                    [ "message" => "Failed to save log verbosity setting. Error: " . $e->getMessage() ]
-                ];
-
-                $this->_helper->json($failureResponse);
-            }
-
-            $this->_helper->json(['success' => true]);
-        }
-    }
-
-    public function getLogVerbosityStatusAction()
-    {
-        if ($this->getRequest()->isGet()) {
-            try {
-                $this->_helper->json(['success' => true, 'log-verbosity' => pm_Settings::get(Settings::LOG_VERBOSITY->value, "true")]);
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Successfully retrieved the domain retention status!");
-                }
-            } catch (Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error("Failed to retrieve domain retention setting. Error: " . $e);
-                }
-
-                $failureResponse = [ "error" =>
-                    [ "message" => "Failed to save log verbosity setting. Error: " . $e->getMessage() ]
-                ];
-
-                $this->_helper->json($failureResponse);
-            }
-        }
-    }
 
     // ################ deSEC Methods ################
 
     /**
      * @throws Zend_Controller_Response_Exception
+     * @throws Exception
      */
     public function registerDomainAction() {
+
         if ($this->getRequest()->isPost()) {
-
-            $desec = new Domains();
             $result_desec = [];
-            $i = 0;
 
-            $payload = json_decode(file_get_contents('php://input'), true);
+            $payload = InputSanitizer::readJsonBody(); // list of IDs
+            if ($payload === [] || array_values($payload) !== $payload) {
+                throw new Exception("Invalid data format!");
+            }
 
-            foreach ($payload as $domain_id) {
+            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
+
+            foreach ($ids as $domain_id) {
                 try {
                     $domain_obj = pm_Domain::getByDomainId($domain_id);
                     $domain = $domain_obj->getName();
-                    $result_desec[$domain] = $desec->addDomain($domain);
+                    $result_desec[$domain] = $this->desecDomains->addDomain($domain);
 
 
                 } catch (Exception  $e) {
-                    if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                        $this->getLogger()->error("Error occurred during domain registration with deSEC: " . $e->getMessage());
-                    }
+                    $this->myLogger->log("error", "Error occurred during domain registration with deSEC: " . $e->getMessage());
 
                     pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Error");
                     $this->getResponse()->setHttpResponseCode(500);
@@ -216,37 +180,37 @@ class ApiController extends pm_Controller_Action
                 }
             }
 
-            if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->debug("Successfully registered domains in deSEC:\n" . print_r($result_desec, true));
-            }
-
+            $this->myLogger->log("info", "Successfully registered domains in deSEC:\n" . print_r($payload, true));
             $this->_helper->json($result_desec);
-
         }
     }
 
     public function syncDnsZoneAction()
     {
         if ($this->getRequest()->isPost()) {
+            $payload = InputSanitizer::readJsonBody();
 
-            $payload = json_decode(file_get_contents('php://input'), true);
+            if ($payload === [] || array_values($payload) !== $payload) {
+                throw new Exception("Invalid data format!");
+            }
 
+            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
+
+            $this->myLogger->log("debug","Ids: " . json_encode($ids));
             $summary = array();
-            $utils = new DomainUtils();
 
-            foreach ($payload as $domain_id) {
+            foreach ($ids as $domain_id) {
                 try {
-                    $summary[$domain_id] = $utils->syncDomain($domain_id);
+                    $summary[$domain_id] = $this->domainUtils->syncDomain($domain_id);
 
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
 
                 } catch(Exception $e) {
-                    if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                        $this->getLogger()->error("Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
-                    }
+                    $this->myLogger->log("error","Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
 
-                    $timestamp = (new DateTime())->format('Y-m-d H:i:s T');
+
+                    $timestamp = new DateTime()->format('Y-m-d H:i:s T');
 
                     $failureResponse = [ "error" =>
                         [ "message" =>  $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp ]
@@ -263,19 +227,15 @@ class ApiController extends pm_Controller_Action
                 }
             }
 
-            if (pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                $this->getLogger()->debug("Successfully synced the DNS zones of the domain(s) in deSEC:\n" . json_encode($summary, true));
-            }
-
+            $this->myLogger->log("info", "Successfully synced the DNS zone of the domains:\n" . print_r($payload, true));
             $this->_helper->json($summary);
-
 
         }
 
     }
 
     public function retrieveTokenAction() {
-        if ($this->getRequest()->isGet()) {
+        if ($this->getRequest()->isGet() && pm_Session::getClient()->isAdmin()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
                     pm_Config::get("DESEC_API_TOKEN")) {
@@ -283,11 +243,11 @@ class ApiController extends pm_Controller_Action
                     $this->_helper->json(["token" => "true"]);
                 }
                 $this->_helper->json(["token" => "false"]);
+                $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
 
             } catch(Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error($e->getMessage());
-                }
+                $this->myLogger->log("error", "Error occurred while retrieving the API token! Error:" . $e->getMessage());
+
 
                 $failureResponse = [ "error" =>
                     [ "message" =>  $e->getMessage() ]
@@ -301,12 +261,8 @@ class ApiController extends pm_Controller_Action
     public function validateTokenAction() {
         if ($this->getRequest()->isPost()) {
             try {
-                $payload = json_decode(file_get_contents('php://input'), true);
-                $tokenValidity = (new Account())->validateToken($payload[0]);
-
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->debug("Token validation response: " . json_encode($tokenValidity));
-                }
+                $payload = InputSanitizer::readJsonBody();
+                $tokenValidity = new Account()->validateToken($payload[0]);
 
                 if($tokenValidity["token"] === "true") {
                     pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);
@@ -315,9 +271,7 @@ class ApiController extends pm_Controller_Action
                 $this->_helper->json($tokenValidity);
 
             } catch(Exception $e) {
-                if(pm_Settings::get(Settings::LOG_VERBOSITY->value, "true") === "true") {
-                    $this->getLogger()->error($e->getMessage());
-                }
+                $this->myLogger->log("error", "Error occurred while validating the API token! Error: " . $e->getMessage());
 
                 $failureResponse = [ "error" =>
                     [ "message" =>  $e->getMessage() ]

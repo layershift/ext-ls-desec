@@ -25,7 +25,6 @@ export const states= {
     sortingBy: 'domain-name',
     sortingDirection: 'ASC',
     syncResponse: [],
-    logVerbosityStatus: "",
     tokenStatus: "true",
     formState: "",
     isFormOpen: true,
