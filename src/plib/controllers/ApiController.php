@@ -3,7 +3,7 @@
 require_once pm_Context::getPlibDir() . 'bootstrap.php';
 
 ##### Custom Classes Imports #####
-use PleksExt\Utils\Validation\InputSanitizer;
+use PleskExt\Utils\Validation\InputSanitizer;
 use PleskExt\Desec\Domains;
 use PleskExt\Desec\Account;
 use PleskExt\Utils\DomainUtils;
