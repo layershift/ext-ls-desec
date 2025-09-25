@@ -15,7 +15,7 @@
   },
 
   "dependencies": {
-    "@plesk/plesk-ext-sdk": "@latest",
-    "axios": "@latest"
+    "@plesk/plesk-ext-sdk": "^0.6.3",
+    "axios": "^1.12.2"
   }
 }
