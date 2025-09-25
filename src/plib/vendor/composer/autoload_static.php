@@ -20,18 +20,22 @@ class ComposerStaticInitde720956044a67ce347861d019658528
         'PleskExt\\Utils\\Validation\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils/validation',
+            1 => __DIR__ . '/../../../..' . '/src/plib/library/utils/validation',
         ),
         'PleskExt\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils',
+            1 => __DIR__ . '/../../../..' . '/src/plib/library/utils',
         ),
         'PleskExt\\Desec\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec/utils',
+            1 => __DIR__ . '/../../../..' . '/src/plib/library/desec/utils',
         ),
         'PleskExt\\Desec\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec',
+            1 => __DIR__ . '/../../../..' . '/src/plib/library/desec',
         ),
     );
 
