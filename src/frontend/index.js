@@ -217,7 +217,14 @@ export default class App extends React.PureComponent {
                         }}
                         closingConfirmation={true}
                     >
-                        <Paragraph>Login to <Link href="https://desec.io">desec.io</Link> and create a token with <strong>can create domains</strong> and <strong>can delete domains</strong> permissions. Paste the token secret value below:</Paragraph>
+                        <Paragraph>
+                            Login to{" "}
+                            <Link href="https://desec.io" target="_blank" rel="noopener noreferrer">
+                                desec.io
+                            </Link>{" "}
+                            and create a token with <strong>can create domains</strong> and{" "}
+                            <strong>can delete domains</strong> permissions. Paste the token secret value below:
+                        </Paragraph>
                         <br />
 
 

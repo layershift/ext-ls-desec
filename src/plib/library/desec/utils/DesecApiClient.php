@@ -33,6 +33,7 @@ final class DesecApiClient
     {
         $maxRetries = $options['maxRetries'] ?? 5;
         $accept404  = (bool)($options['accept404'] ?? false);
+        $tokenValidation = (bool)($options['token-validation'] ?? false);
         $payload    = array_key_exists('json', $options) ? json_encode($options['json']) : null;
 
         $headers = array_merge([
@@ -93,7 +94,7 @@ final class DesecApiClient
             }
 
             // Auth invalidation shortcut for the Account use-case
-            if ($httpCode === 401) {
+            if ($tokenValidation && $httpCode < 500) {
                 return [
                     'code'    => $httpCode,
                     'headers' => $headerText,

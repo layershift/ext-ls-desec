@@ -37,7 +37,7 @@ class Account
             return [ "token" => "false" ];
         }
 
-        $res = $client->request('GET', 'auth/account/');
+        $res = $client->request('GET', 'auth/account/', [ "token-validation" => true]);
 
         if ($res['code'] === 401) {
             $this->myLogger->log("debug", "The provided token is invalid! Response: " . PHP_EOL . json_encode($res, JSON_PRETTY_PRINT));
