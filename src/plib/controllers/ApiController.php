@@ -233,7 +233,7 @@ class ApiController extends pm_Controller_Action
     }
 
     public function retrieveTokenAction() {
-        if ($this->getRequest()->isGet() && pm_Session::getClient()->isAdmin()) {
+        if ($this->getRequest()->isGet()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
                     pm_Config::get("DESEC_API_TOKEN")) {
