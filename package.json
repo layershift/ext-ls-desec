@@ -13,8 +13,9 @@
     "dev": "plesk-ext-sdk dev",
     "build": "plesk-ext-sdk build"
   },
+
   "dependencies": {
-    "@plesk/plesk-ext-sdk": "latest",
-    "axios": "latest"
+    "@plesk/plesk-ext-sdk": "@latest",
+    "axios": "@latest"
   }
 }

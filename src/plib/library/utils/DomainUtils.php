@@ -1,17 +1,20 @@
 <?php /** @noinspection DuplicatedCode */
 
-namespace resources\plib\library\utils;
+namespace PleskExt\Utils;
 
 
 ##### Custom Classes Imports #####
-use DateTime;
-use Exception;
-use pm_Domain;
-use Psr\Log\LoggerInterface;
-use resources\plib\library\desec\Dns;
-use resources\plib\library\desec\Domains;
+use PleskExt\Desec\Dns;
+use PleskExt\Desec\Domains;
+use PleskExt\Utils\MyLogger;
 
 ##### Plesk Classes Imports #####
+use DateTime;
+use Exception;
+use pm_Bootstrap;
+use pm_Domain;
+use pm_Settings;
+use Psr\Log\LoggerInterface;
 
 class DomainUtils
 {

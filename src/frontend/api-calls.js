@@ -117,7 +117,7 @@ export const getDomainRetentionStatus = async function () {
                 {
                     key,
                     intent: 'danger',
-                    message: `An error occurred while saving the log verbosity status.`
+                    message: `An error occurred while fetching the domain retention status.`
                 }
             ]
         }));

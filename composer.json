@@ -2,7 +2,7 @@
   "name": "layershift/ext-ls-desec",
   "type": "project",
   "config": {
-    "vendor-dir": "src/plib/vendor/"
+    "vendor-dir": "src/plib/vendor"
   },
   "autoload": {
     "psr-4": {
@@ -21,3 +21,5 @@
     }
   }
 }
+
+

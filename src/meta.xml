@@ -9,7 +9,6 @@
     <vendor>Layershift</vendor>
     <url>https://www.layershift.com/</url>
     <support_url>https://github.com/layershift/ext-ls-desec</support_url>
-    <help>https://help.layershift.com/</help>
     <plesk_min_version>18.0.71</plesk_min_version>
 
 </module>

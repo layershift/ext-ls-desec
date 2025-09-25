@@ -1,6 +1,7 @@
 tests/
 node_modules/
 .idea/
+vendor/
 
 
 
