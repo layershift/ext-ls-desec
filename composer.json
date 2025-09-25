@@ -1,5 +1,5 @@
 {
-  "name": "layershift/ext-ls-desec",
+  "name": "layershift/ls-desec-dns",
   "type": "project",
   "config": {
     "vendor-dir": "src/plib/vendor"

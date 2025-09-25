@@ -1,6 +1,6 @@
 <?php
 
-namespace PleksExt\Utils\Validation;
+namespace PleskExt\Utils\Validation;
 
 use Exception;
 

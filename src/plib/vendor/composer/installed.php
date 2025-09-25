@@ -1,19 +1,19 @@
 <?php return array(
     'root' => array(
-        'name' => 'layershift/ext-ls-desec',
+        'name' => 'layershift/ls-desec-dns',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '120be7a04c8849f20f7597bdf3a91cdb6bf38d5d',
+        'reference' => '59c1a0629ae74817267055c5d928c42978cc2835',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
-        'layershift/ext-ls-desec' => array(
+        'layershift/ls-desec-dns' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '120be7a04c8849f20f7597bdf3a91cdb6bf38d5d',
+            'reference' => '59c1a0629ae74817267055c5d928c42978cc2835',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../../../',
             'aliases' => array(),

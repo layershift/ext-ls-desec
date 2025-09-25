@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitde720956044a67ce347861d019658528
+class ComposerStaticInit98c231174a79249c88e808990427615d
 {
     public static $prefixLengthsPsr4 = array (
         'P' => 
@@ -20,22 +20,18 @@ class ComposerStaticInitde720956044a67ce347861d019658528
         'PleskExt\\Utils\\Validation\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils/validation',
-            1 => __DIR__ . '/../../../..' . '/src/plib/library/utils/validation',
         ),
         'PleskExt\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils',
-            1 => __DIR__ . '/../../../..' . '/src/plib/library/utils',
         ),
         'PleskExt\\Desec\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec/utils',
-            1 => __DIR__ . '/../../../..' . '/src/plib/library/desec/utils',
         ),
         'PleskExt\\Desec\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec',
-            1 => __DIR__ . '/../../../..' . '/src/plib/library/desec',
         ),
     );
 
@@ -46,9 +42,9 @@ class ComposerStaticInitde720956044a67ce347861d019658528
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitde720956044a67ce347861d019658528::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitde720956044a67ce347861d019658528::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitde720956044a67ce347861d019658528::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit98c231174a79249c88e808990427615d::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit98c231174a79249c88e808990427615d::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit98c231174a79249c88e808990427615d::$classMap;
 
         }, null, ClassLoader::class);
     }
