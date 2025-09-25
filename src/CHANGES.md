@@ -11,6 +11,14 @@ Based on the recommendations from the Plesk Extension Certification team, this r
 - Fixed composer.json file placement and published the correct vendor/ directory
 - Updated axios to 1.12.2
 
+### Bug Fixes:
+
+Bug Fixes:
+
+- Newly created tokens used in a GET request on `auth/account/` received 403(expected behaviour), 
+but instead of the response being passed back to the validateToken(), and treated according to the 401/403 cases, 
+the response was being picked up as an error, and the entire token validation process would halt.
+
 
 ## 1.0.0-2 (September 2025):
 
