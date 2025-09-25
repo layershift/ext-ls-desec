@@ -1,14 +1,21 @@
 <?php
 
+namespace resources\plib\controllers;
 require_once pm_Context::getPlibDir() . 'bootstrap.php';
 
 ##### Custom Classes Imports #####
-use PleksExt\Utils\Validation\InputSanitizer;
-use PleskExt\Desec\Domains;
-use PleskExt\Desec\Account;
-use PleskExt\Utils\DomainUtils;
-use PleskExt\Utils\Settings;
-use PleskExt\Utils\MyLogger;
+use pm_Config;
+use pm_Controller_Action;
+use pm_Domain;
+use pm_Session;
+use pm_Settings;
+use resources\plib\library\desec\Account;
+use resources\plib\library\desec\Domains;
+use resources\plib\library\utils\DomainUtils;
+use resources\plib\library\utils\MyLogger;
+use resources\plib\library\utils\Settings;
+use resources\plib\library\utils\validation\InputSanitizer;
+use Zend_Controller_Response_Exception;
 
 ##### Plesk Classes Imports #####
 
@@ -21,9 +28,9 @@ class ApiController extends pm_Controller_Action
     private Domains $desecDomains;
     private MyLogger $myLogger;
 
-    public function __construct(Zend_Controller_Request_Abstract $request, Zend_Controller_Response_Abstract $response, array $invokeArgs = array())
+    public function init()
     {
-        parent::__construct($request, $response, $invokeArgs);
+        parent::init();
         $this->domainUtils = new DomainUtils();
         $this->desecDomains = new Domains();
         $this->myLogger = new MyLogger();
@@ -69,8 +76,8 @@ class ApiController extends pm_Controller_Action
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to save domain retention setting. Error: " . $e->getMessage());
 
-            $failureResponse = [ "error" =>
-                [ "message" =>  "Failed to save domain retention setting. Error: " . $e->getMessage() ]
+            $failureResponse = ["error" =>
+                ["message" => "Failed to save domain retention setting. Error: " . $e->getMessage()]
             ];
 
             $this->_helper->json($failureResponse);
@@ -80,8 +87,8 @@ class ApiController extends pm_Controller_Action
     }
 
 
-    public function getDomainRetentionStatusAction(): void {
-
+    public function getDomainRetentionStatusAction(): void
+    {
 
         try {
             if ($this->getRequest()->isGet()) {
@@ -96,7 +103,7 @@ class ApiController extends pm_Controller_Action
 
             $this->_helper->json([
                 'success' => false,
-                'error'   => 'Failed to retrieve domain retention setting.'
+                'error' => 'Failed to retrieve domain retention setting.'
             ]);
         }
     }
@@ -129,7 +136,7 @@ class ApiController extends pm_Controller_Action
 
             $this->_helper->json([
                 'success' => false,
-                'error'   => 'Failed to save domain(s) auto-sync status setting.'
+                'error' => 'Failed to save domain(s) auto-sync status setting.'
             ]);
         }
 
@@ -143,7 +150,8 @@ class ApiController extends pm_Controller_Action
      * @throws Zend_Controller_Response_Exception
      * @throws Exception
      */
-    public function registerDomainAction() {
+    public function registerDomainAction()
+    {
 
         if ($this->getRequest()->isPost()) {
             $result_desec = [];
@@ -168,11 +176,11 @@ class ApiController extends pm_Controller_Action
                     pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Error");
                     $this->getResponse()->setHttpResponseCode(500);
 
-                    $failureResponse = [ "error" =>
-                        [ "message" =>  $e->getMessage(), "failed_domain" =>  pm_Domain::getByDomainId($domain_id)->getName() ]
+                    $failureResponse = ["error" =>
+                        ["message" => $e->getMessage(), "failed_domain" => pm_Domain::getByDomainId($domain_id)->getName()]
                     ];
 
-                    if(!empty($result_desec)) {
+                    if (!empty($result_desec)) {
                         $failureResponse["error"]["results"] = $result_desec;
                     }
 
@@ -196,7 +204,7 @@ class ApiController extends pm_Controller_Action
 
             $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
 
-            $this->myLogger->log("debug","Ids: " . json_encode($ids));
+            $this->myLogger->log("debug", "Ids: " . json_encode($ids));
             $summary = array();
 
             foreach ($ids as $domain_id) {
@@ -206,17 +214,17 @@ class ApiController extends pm_Controller_Action
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
                     pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
 
-                } catch(Exception $e) {
-                    $this->myLogger->log("error","Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
+                } catch (Exception $e) {
+                    $this->myLogger->log("error", "Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
 
 
                     $timestamp = new DateTime()->format('Y-m-d H:i:s T');
 
-                    $failureResponse = [ "error" =>
-                        [ "message" =>  $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp ]
+                    $failureResponse = ["error" =>
+                        ["message" => $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp]
                     ];
 
-                    if(!empty($summary)) {
+                    if (!empty($summary)) {
                         $failureResponse["error"]["results"] = $summary;
                     }
 
@@ -234,7 +242,8 @@ class ApiController extends pm_Controller_Action
 
     }
 
-    public function retrieveTokenAction() {
+    public function retrieveTokenAction()
+    {
         if ($this->getRequest()->isGet() && pm_Session::getClient()->isAdmin()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
@@ -245,12 +254,12 @@ class ApiController extends pm_Controller_Action
                 $this->_helper->json(["token" => "false"]);
                 $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
 
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 $this->myLogger->log("error", "Error occurred while retrieving the API token! Error:" . $e->getMessage());
 
 
-                $failureResponse = [ "error" =>
-                    [ "message" =>  $e->getMessage() ]
+                $failureResponse = ["error" =>
+                    ["message" => $e->getMessage()]
                 ];
 
                 $this->_helper->json($failureResponse);
@@ -258,23 +267,24 @@ class ApiController extends pm_Controller_Action
         }
     }
 
-    public function validateTokenAction() {
+    public function validateTokenAction()
+    {
         if ($this->getRequest()->isPost()) {
             try {
                 $payload = InputSanitizer::readJsonBody();
                 $tokenValidity = new Account()->validateToken($payload[0]);
 
-                if($tokenValidity["token"] === "true") {
+                if ($tokenValidity["token"] === "true") {
                     pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);
                 }
 
                 $this->_helper->json($tokenValidity);
 
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 $this->myLogger->log("error", "Error occurred while validating the API token! Error: " . $e->getMessage());
 
-                $failureResponse = [ "error" =>
-                    [ "message" =>  $e->getMessage() ]
+                $failureResponse = ["error" =>
+                    ["message" => $e->getMessage()]
                 ];
 
                 $this->_helper->json($failureResponse);

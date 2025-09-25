@@ -1,20 +1,17 @@
-<?php
+<?php /** @noinspection DuplicatedCode */
 
-namespace PleskExt\Utils;
+namespace resources\plib\library\utils;
 
 
 ##### Custom Classes Imports #####
-use PleskExt\Desec\Dns;
-use PleskExt\Desec\Domains;
-use PleskExt\Utils\MyLogger;
-
-##### Plesk Classes Imports #####
 use DateTime;
 use Exception;
-use pm_Bootstrap;
 use pm_Domain;
-use pm_Settings;
 use Psr\Log\LoggerInterface;
+use resources\plib\library\desec\Dns;
+use resources\plib\library\desec\Domains;
+
+##### Plesk Classes Imports #####
 
 class DomainUtils
 {
@@ -74,7 +71,11 @@ class DomainUtils
     * This function returns all the DNS records of a domain
     * @var int $domainId
     */
-    public function getDNSRecords($domainId) {
+    /**
+     * @throws \pm_Exception
+     */
+    public function getDNSRecords($domainId): array
+    {
         $rrsets = array();
         $domain = pm_Domain::getByDomainId($domainId);
         $dnsZone = $domain->getDnsZone();
