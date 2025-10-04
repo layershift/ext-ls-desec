@@ -21,6 +21,19 @@ class Domains
         $this->myLogger = new MyLogger();
     }
 
+    public function getDomain($domain) {
+        $res = $this->client->request('GET', 'domains/' . $domain . '/');
+
+        if($res['code'] === 200) {
+            $this->myLogger->log("debug", "Domain {$domain} successfully fetched!. Response: " . PHP_EOL . $res['body']);
+            return true;
+        } else {
+            $this->myLogger->log("debug", "Domain {$domain} doesn't exist!. Response: " . PHP_EOL . $res['body']);
+            return false;
+        }
+
+    }
+
     public function getDesecDomains(): array {
         $res = $this->client->request('GET', 'domains/');
         $this->myLogger->log("debug", "deSEC domains retrieved: " . PHP_EOL . $res['body']);
@@ -44,7 +57,7 @@ class Domains
     public function deleteDomain(string $domain) : array {
         $res = $this->client->request('DELETE', 'domains/' . rawurlencode($domain) . "/");
 
-        $this->myLogger->log("debug", "Domain {$domain} deleted. Response: " . PHP_EOL . $res['body']);
+        $this->myLogger->log("debug", "Domain {$domain} deleted!");
         return ['code' => $res['code'], 'response' => $res['body']];
     }
 

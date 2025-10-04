@@ -52,7 +52,7 @@ final class DesecApiClient
                 CURLOPT_HEADER         => true,
                 CURLOPT_HTTPHEADER     => $headers,
                 CURLOPT_POSTFIELDS     => $payload,
-                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_TIMEOUT        => 60,
             ]);
 
             $response = curl_exec($curl);

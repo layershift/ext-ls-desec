@@ -257,8 +257,8 @@ export default class App extends React.PureComponent {
                                     allSelectedAreNotRegistered={allSelectedAreNotRegistered}
                                     handleAddDomainToDesec={handleAddDomainToDesec.bind(this)}
                                     handleDNSRecordsSync={handleDNSRecordsSync.bind(this)}
-                                    enableBulkAutoSync={handleBulkAutoSync.bind(this, true)}
-                                    disableBulkAutoSync={handleBulkAutoSync.bind(this, false)}
+                                    enableBulkAutoSync={handleBulkAutoSync.bind(this, "true")}
+                                    disableBulkAutoSync={handleBulkAutoSync.bind(this, "false")}
                                     handleSearchChange={handleSearchChange.bind(this)}
                                     handleSortByChange={handleSortByChange.bind(this)}
                                     handleSortDirectionChange={handleSortDirectionChange.bind(this)}

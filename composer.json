@@ -20,8 +20,9 @@
       "PleskExt\\Utils\\Validation\\": "src/plib/library/utils/validation"
     }
   },
-  "require-dev": {
-    "ext-curl": "*"
+  "require": {
+    "ext-curl": "*",
+    "ext-ctype": "*"
   }
 }
 

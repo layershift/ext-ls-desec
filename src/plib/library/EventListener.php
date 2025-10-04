@@ -1,7 +1,5 @@
 <?php
 
-require_once pm_Context::getPlibDir() . 'bootstrap.php';
-
 ##### Custom Classes Imports #####
 use PleskExt\Desec\Domains;
 use PleskExt\Utils\Settings;
@@ -26,7 +24,9 @@ class Modules_LsDesecDns_EventListener implements EventListener
      */
     public function handleEvent($objectType, $objectId, $action, $oldValues, $newValues)
     {
+
         $logger = new MyLogger();
+        $logger->log("debug", "Event listener objects:" . $objectId . " " . $action . " " . json_encode($oldValues) . " " . json_encode($newValues));
 
         switch($action) {
             case 'domain_dns_update':
@@ -54,13 +54,13 @@ class Modules_LsDesecDns_EventListener implements EventListener
                 break;
 
             case 'domain_delete':
+                $desec = new Domains();
                 $domain_name = $oldValues["Domain Name"];
                 $logger->log("debug","[ event-listener ] Domain " . $domain_name . " was deleted!");
 
-                $domain_id = $objectId;
-                if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false") &&
-                    (pm_Domain::getByDomainId($domain_id)->getSetting(Settings::DESEC_STATUS->value, "Not Registered")) === "Registered") {
-                    $desec = new Domains();
+                $logger->log("debug", pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") . " " . $desec->getDomain($domain_name));
+
+                if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false") && $desec->getDomain($domain_name)) {
 
                     try {
                         $response = $desec->deleteDomain($domain_name);
@@ -69,6 +69,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
                     } catch(Exception $e) {
                         $logger->log("error","[ event-listener ]" . $e->getMessage());
                     }
+
                 }
                 break;
 

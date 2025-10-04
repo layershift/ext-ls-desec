@@ -39,18 +39,18 @@ export const handleBulkAutoSync = function (status) {
 
         prevState.selectedDomains.forEach(domainId => {
             const index = domains.findIndex(d => d["domain-id"] === domainId);
+            const prevStatus = domains[index]["auto-sync-status"];
 
             if (index !== -1) {
-                const prevStatus = domains[index]["auto-sync-status"];
-                const newStatus = prevStatus === "true" ? "false" : "true";
 
                 if (prevStatus !== status) {
+
                     domains[index] = {
                         ...domains[index],
-                        ["auto-sync-status"]: newStatus
+                        ["auto-sync-status"]: status
                     };
 
-                    bulkChanges.push([ domainId, newStatus, prevStatus ]);
+                    bulkChanges.push([ domainId, status, prevStatus ]);
                 }
             }
         });

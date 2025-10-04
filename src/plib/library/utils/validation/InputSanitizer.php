@@ -27,20 +27,22 @@ final class InputSanitizer
 
     }
 
-    public static function normalizeBool(mixed $value): bool
+    public static function normalizeBool(mixed $value): string
     {
         if (is_bool($value)) {
-            return $value;
+            return $value ? "true" : "false";
         }
+
         if (is_int($value)) {
-            return $value === 1;
+            return $value === 1 ? "true" : "false";
         }
+
         if (is_string($value)) {
             $v = strtolower(trim($value));
-            if (in_array($v, ['1', 'true', 'on', 'yes', true], true)) {
+            if (in_array($v, ["1", "true", "on", "yes", true], true)) {
                 return "true";
             }
-            if (in_array($v, ['0', 'false', 'off', 'no', false, '', null], true)) {
+            if (in_array($v, ["0", "false", "off", "no", false, "", null], true)) {
                 return "false";
             }
         }

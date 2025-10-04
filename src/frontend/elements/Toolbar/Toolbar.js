@@ -45,13 +45,13 @@ const DomainListToolbar = ({
 
             <ToolbarGroup title="Bulk Actions">
                 <Button
-                    onClick={() => enableBulkAutoSync(true)}
+                    onClick={() => enableBulkAutoSync("true")}
                     disabled={!selectedDomains.size > 0 || !allSelectedAreRegistered}
                 >
                     Enable Auto-Sync
                 </Button>
                 <Button
-                    onClick={() => disableBulkAutoSync(false)}
+                    onClick={() => disableBulkAutoSync("false")}
                     disabled={!selectedDomains.size > 0 || !allSelectedAreRegistered}
                 >
                     Disable Auto-Sync

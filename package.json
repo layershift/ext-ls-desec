@@ -1,10 +1,10 @@
 {
-  "name": "ext-ls-desec",
-  "version": "1.0.0",
+  "name": "ls-desec-dns",
+  "version": "1.0.3",
   "description": "This extension is used for syncing Plesk's DNS zone with the one from deSEC.",
   "main": "index.js",
   "repository": "https://github.com/layershift/ext-ls-desec",
-  "author": "Luca Cristea",
+  "author": "Layershift",
   "license": "MIT",
   "private": null,
 
