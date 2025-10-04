@@ -1,3 +1,18 @@
+## 1.0.0-4 (October 2025):
+
+---
+
+Following the recommendations of the Plesk Extension Certification team, this release includes the following improvements & fixes:
+
+### Improvements:
+
+Removed redundant bootstrap.php file and tested the extension installation process.
+
+### Bug Fixes:
+Domain wasn't properly deleted from deSEC because of the bool value returned from `normalizeBool` function.
+Both bulk `Enable/Disable auto-sync` buttons were capable of triggering the reverse action as well.
+
+
 ## 1.0.0-3 (September 2025):
 
 ---

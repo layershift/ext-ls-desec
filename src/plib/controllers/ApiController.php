@@ -112,7 +112,6 @@ class ApiController extends pm_Controller_Action
 
                 foreach ($data as $id => $statusRaw) {
                     $domainId = InputSanitizer::validateDomainId($id);
-                    $this->myLogger->log("info", "Status: " . $statusRaw);
                     $status = InputSanitizer::normalizeBool($statusRaw);
 
                     $domain_obj = pm_Domain::getByDomainId($domainId);
