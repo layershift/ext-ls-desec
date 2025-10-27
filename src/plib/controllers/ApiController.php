@@ -19,8 +19,16 @@ class ApiController extends pm_Controller_Action
     private Domains $desecDomains;
     private MyLogger $myLogger;
 
+    /**
+     * @throws pm_Exception
+     */
     public function init() {
         parent::init();
+
+        if (!pm_Session::getClient()->isAdmin()) {
+            throw new pm_Exception('Permission denied');
+        }
+
         $this->domainUtils = new DomainUtils();
         $this->desecDomains = new Domains();
         $this->myLogger = new MyLogger();

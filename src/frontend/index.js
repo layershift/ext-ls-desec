@@ -30,6 +30,7 @@ import {
 
 export default class App extends React.PureComponent {
     static propTypes = propTypes;
+
     state = states;
 
     async componentDidMount() {
@@ -106,7 +107,7 @@ export default class App extends React.PureComponent {
             {
                 key: 'domain-name',
                 title: 'Domain',
-                render: row => <Link to={`#${row['domain-name']}`}>{row['domain-name']}</Link>
+                render: row => <Link href={(row["domain-link"])}>{row['domain-name']}</Link>
             },
             {
                 key: 'last-sync-status',
@@ -163,6 +164,8 @@ export default class App extends React.PureComponent {
     }
 
     render() {
+        console.log("type: ", this.props);
+
         const {
             domains,
             selectedDomains,

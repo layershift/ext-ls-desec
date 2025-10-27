@@ -13,6 +13,7 @@ use DateTime;
 use Exception;
 use pm_Bootstrap;
 use pm_Domain;
+use pm_Session;
 use pm_Settings;
 use Psr\Log\LoggerInterface;
 
@@ -55,6 +56,12 @@ class DomainUtils
                 }
             }
 
+            if(pm_Session::getClient()->isAdmin()) {
+                $domainLink = "/admin/subscription/login/id/".$pm_Domain->getId()."?pageUrl=/smb/web/overview/id/".$pm_Domain->getId()."/type/domain";
+            } else {
+                $domainLink = "/smb/web/overview/id/".$pm_Domain->."/type/domain";
+            }
+
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
                 'domain-name' => $pm_Domain->getName(),
@@ -62,7 +69,8 @@ class DomainUtils
                 'last-sync-status' => $pm_Domain->getSetting(Settings::LAST_SYNC_STATUS->value, "No data"),
                 'dns-status' => $pm_Domain->getDnsZone()->isEnabled(),
                 'desec-status' => $pm_Domain->getSetting(Settings::DESEC_STATUS->value, "Not Registered"),
-                'auto-sync-status' => $pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value, "false")
+                'auto-sync-status' => $pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value, "false"),
+                'domain-link' => $domainLink,
             ];
         }
 
