@@ -6,8 +6,8 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname(dirname(dirname($vendorDir)));
 
 return array(
-    'PleskExt\\Utils\\Validation\\' => array($baseDir . '/modules/ls-desec-dns/library/utils/validation'),
-    'PleskExt\\Utils\\' => array($baseDir . '/modules/ls-desec-dns/library/utils'),
-    'PleskExt\\Desec\\Utils\\' => array($baseDir . '/modules/ls-desec-dns/library/desec/utils'),
-    'PleskExt\\Desec\\' => array($baseDir . '/modules/ls-desec-dns/library/desec'),
+    'PleskExt\\Utils\\Validation\\' => array($baseDir . '/modules/ls-desec-dns/library/utils/validation', $baseDir . '/src/plib/library/utils/validation'),
+    'PleskExt\\Utils\\' => array($baseDir . '/modules/ls-desec-dns/library/utils', $baseDir . '/src/plib/library/utils'),
+    'PleskExt\\Desec\\Utils\\' => array($baseDir . '/modules/ls-desec-dns/library/desec/utils', $baseDir . '/src/plib/library/desec/utils'),
+    'PleskExt\\Desec\\' => array($baseDir . '/modules/ls-desec-dns/library/desec', $baseDir . '/src/plib/library/desec'),
 );

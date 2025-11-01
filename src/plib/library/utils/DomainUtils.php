@@ -59,12 +59,12 @@ class DomainUtils
             if(pm_Session::getClient()->isAdmin()) {
                 $domainLink = "/admin/subscription/login/id/".$pm_Domain->getId()."?pageUrl=/smb/web/overview/id/".$pm_Domain->getId()."/type/domain";
             } else {
-                $domainLink = "/smb/web/overview/id/".$pm_Domain->."/type/domain";
+                $domainLink = "/smb/web/overview/id/".$pm_Domain->getId()."/type/domain";
             }
 
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
-                'domain-name' => $pm_Domain->getName(),
+                'domain-name' => idn_to_ascii($pm_Domain->getName()),
                 'last-sync-attempt' => $pm_Domain->getSetting(Settings::LAST_SYNC_ATTEMPT->value, "No date"),
                 'last-sync-status' => $pm_Domain->getSetting(Settings::LAST_SYNC_STATUS->value, "No data"),
                 'dns-status' => $pm_Domain->getDnsZone()->isEnabled(),
