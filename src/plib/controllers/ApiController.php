@@ -7,7 +7,6 @@ use PleskExt\Desec\Account;
 use PleskExt\Utils\DomainUtils;
 use PleskExt\Utils\Settings;
 use PleskExt\Utils\MyLogger;
-
 ##### Plesk Classes Imports #####
 
 class ApiController extends pm_Controller_Action
@@ -50,9 +49,9 @@ class ApiController extends pm_Controller_Action
                 ["message" => $e->getMessage()]
             ];
 
+
             $this->_helper->json($failureResponse);
         }
-
     }
 
 
@@ -188,53 +187,90 @@ class ApiController extends pm_Controller_Action
         }
     }
 
+//    public function syncDnsZoneAction()
+//    {
+//        if ($this->getRequest()->isPost()) {
+//            $payload = InputSanitizer::readJsonBody();
+//
+//            if ($payload === [] || array_values($payload) !== $payload) {
+//                throw new Exception("Invalid data format!");
+//            }
+//
+//            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
+//
+//            $this->myLogger->log("debug","Ids: " . json_encode($ids));
+//            $summary = array();
+//
+//            foreach ($ids as $domain_id) {
+//                try {
+//                    $summary[$domain_id] = $this->domainUtils->syncDomain($domain_id);
+//
+//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
+//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
+//
+//                } catch(Exception $e) {
+//                    $this->myLogger->log("error","Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
+//
+//
+//                    $timestamp = new DateTime()->format('Y-m-d H:i:s T');
+//
+//                    $failureResponse = [ "error" =>
+//                        [ "message" =>  $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp ]
+//                    ];
+//
+//                    if(!empty($summary)) {
+//                        $failureResponse["error"]["results"] = $summary;
+//                    }
+//
+//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED");
+//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
+//
+//                    $this->_helper->json($failureResponse);
+//                }
+//            }
+//
+//            $this->myLogger->log("info", "Successfully synced the DNS zone of the domains:\n" . print_r($payload, true));
+//            $this->_helper->json($summary);
+//
+//        }
+//    }
+
     public function syncDnsZoneAction()
     {
-        if ($this->getRequest()->isPost()) {
-            $payload = InputSanitizer::readJsonBody();
-
-            if ($payload === [] || array_values($payload) !== $payload) {
-                throw new Exception("Invalid data format!");
-            }
-
-            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
-
-            $this->myLogger->log("debug","Ids: " . json_encode($ids));
-            $summary = array();
-
-            foreach ($ids as $domain_id) {
-                try {
-                    $summary[$domain_id] = $this->domainUtils->syncDomain($domain_id);
-
-                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
-                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
-
-                } catch(Exception $e) {
-                    $this->myLogger->log("error","Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
-
-
-                    $timestamp = new DateTime()->format('Y-m-d H:i:s T');
-
-                    $failureResponse = [ "error" =>
-                        [ "message" =>  $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp ]
-                    ];
-
-                    if(!empty($summary)) {
-                        $failureResponse["error"]["results"] = $summary;
-                    }
-
-                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED");
-                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
-
-                    $this->_helper->json($failureResponse);
-                }
-            }
-
-            $this->myLogger->log("info", "Successfully synced the DNS zone of the domains:\n" . print_r($payload, true));
-            $this->_helper->json($summary);
-
+        if (!$this->getRequest()->isPost()) {
+            throw new Exception('POST required');
         }
 
+        $payload = InputSanitizer::readJsonBody();
+
+        if ($payload === [] || array_values($payload) !== $payload) {
+            throw new Exception('Invalid data format!');
+        }
+
+        $ids = array_unique(array_map(
+            fn($id) => InputSanitizer::validateDomainId($id),
+            $payload
+        ));
+
+        $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
+
+        $task = new Modules_LsDesecDns_Task_SyncDnsZones();
+        $task->setParam('ids', array_values($ids));
+
+        // Optional: run without domain context; or use a specific pm_Domain if you prefer
+        $manager = new pm_LongTask_Manager();
+        $manager->start($task);
+
+        $uid = $task->getInstanceId(); // unique per started task
+
+        $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid);
+
+        // Return a tiny descriptor that clients can poll
+        $this->_helper->json([
+            'taskUid'  => $uid,
+            'statusUrl'=> pm_Context::getBaseUrl() . 'api/task-status?uid=' . urlencode($uid),
+            'message'  => 'DNS sync started',
+        ]);
     }
 
     public function retrieveTokenAction() {

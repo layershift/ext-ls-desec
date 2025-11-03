@@ -1,6 +1,13 @@
 <?php
 
 use PleskExt\Utils\Settings;
+use PleskExt\Utils\DomainUtils;
+use PleskExt\Utils\MyLogger;
+
+use pm_Domain;
+use pm_LongTask_Task;
+use DateTime;
+use Exception;
 
 class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 {
@@ -8,7 +15,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     public $hidden = false;
 
     public function getId() {
-        return 'task_sync_dns_zones';
+        return 'task_syncdnszones';
     }
 
     public function statusMessage(): string
@@ -29,16 +36,13 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $count   = count($ids);
         $i       = 0;
 
-        // Services injected via params to keep the task decoupled from controllers.
-        /** @var callable(int $id): array $syncFn */
-        $syncFn = $this->getParam('syncFn'); // see controller below
-        if (!is_callable($syncFn)) {
-            throw new Exception('syncFn not provided to long task');
-        }
+        $domainUtils = new DomainUtils();
+        $myLogger = new MyLogger();
+
 
         foreach ($ids as $domainId) {
             try {
-                $result = $syncFn($domainId);
+                $result = $domainUtils->syncDomain($domainId);
                 $summary[$domainId] = $result;
 
                 $ts = $result['timestamp'] ?? new DateTime()->format('Y-m-d H:i:s T');
@@ -60,6 +64,8 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'FAILED');
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
+
+                $myLogger->log('error', "Error syncing $domainId: " . $e->getMessage());
             }
 
             $i++;
