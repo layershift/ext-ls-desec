@@ -32,8 +32,10 @@ class Modules_LsDesecDns_EventListener implements EventListener
             case 'domain_dns_update':
                 $logger->log("debug","[ event-listener ] Domain's DNS zone was updated!");
                 $domain_id = $objectId;
+                $desec = new Domains();
+                $domain_name = $oldValues["Domain Name"]; //here
 
-                if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true") {
+                if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true" && $desec->getDomain($domain_name)) {
                     try {
                         $domain_name = $newValues["Domain Name"];
                         $utils = new DomainUtils();
