@@ -107,7 +107,14 @@ export default class App extends React.PureComponent {
             {
                 key: 'domain-name',
                 title: 'Domain',
-                render: row => <Link href={(row["domain-link"])}>{row['domain-name']}</Link>
+                render: row =>
+                    <Link
+                        href={row['domain-link']}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {row['domain-name']}
+                    </Link>
             },
             {
                 key: 'last-sync-status',

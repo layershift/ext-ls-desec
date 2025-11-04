@@ -4,11 +4,6 @@ use PleskExt\Utils\Settings;
 use PleskExt\Utils\DomainUtils;
 use PleskExt\Utils\MyLogger;
 
-use pm_Domain;
-use pm_LongTask_Task;
-use DateTime;
-use Exception;
-
 class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 {
     public $trackProgress = true;
@@ -20,12 +15,51 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
     public function statusMessage(): string
     {
-        return match ($this->getStatus()) {
-            static::STATUS_RUNNING => 'Syncing DNS Zones',
-            static::STATUS_DONE => 'DNS zone sync completed',
-            static::STATUS_ERROR => 'DNS zone sync failed',
+        $status = $this->getStatus();
+        $summary = (array) $this->getParam('summary');
+
+        return match ($status) {
+            static::STATUS_RUNNING => 'Syncing DNS Zones...',
+            static::STATUS_DONE => $this->formatDoneMessage($summary),
+            static::STATUS_ERROR => $this->formatErrorMessage($summary),
             default => '',
         };
+    }
+
+    private function formatDoneMessage(array $summary): string
+    {
+        if (empty($summary)) {
+            return 'DNS zone sync completed (no changes)';
+        }
+
+        $totalDomains = count($summary);
+        $successCount = 0;
+        $failCount = 0;
+
+        foreach ($summary as $result) {
+            if (isset($result['error'])) {
+                $failCount++;
+            } else {
+                $successCount++;
+            }
+        }
+
+        if ($failCount === 0) {
+            return "DNS zone sync completed successfully ({$successCount} domain(s))";
+        }
+
+        return "DNS zone sync completed with errors ({$successCount} succeeded, {$failCount} failed)";
+    }
+
+    private function formatErrorMessage(array $summary): string
+    {
+        $processedCount = count($summary);
+
+        if ($processedCount === 0) {
+            return 'DNS zone sync failed';
+        }
+
+        return "DNS zone sync failed (processed {$processedCount} domain(s) before error)";
     }
 
     public function run()

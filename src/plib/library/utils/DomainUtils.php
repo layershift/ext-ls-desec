@@ -47,6 +47,7 @@ class DomainUtils
         );
 
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
+            $domainLink = "/smb/dns-zone/records-list/id/".$pm_Domain->getId()."/type/domain";
 
             if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== Status::STATUS_ERROR->value) {
                 if (isset($domainNameSet[$pm_Domain->getName()])) {
@@ -56,11 +57,11 @@ class DomainUtils
                 }
             }
 
-            if(pm_Session::getClient()->isAdmin()) {
-                $domainLink = "/admin/subscription/login/id/".$pm_Domain->getId()."?pageUrl=/smb/web/overview/id/".$pm_Domain->getId()."/type/domain";
-            } else {
-                $domainLink = "/smb/web/overview/id/".$pm_Domain->getId()."/type/domain";
+            if($pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value) === "true" &&
+                $pm_Domain->getSetting(Settings::DESEC_STATUS->value) === Status::STATUS_NOT_REGISTERED->value) {
+                $pm_Domain->setSetting(Settings::AUTO_SYNC_STATUS->value, "false");
             }
+
 
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
