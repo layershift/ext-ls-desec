@@ -35,9 +35,10 @@ class ApiController extends pm_Controller_Action
 
     public function getDomainsInfoAction(): void
     {
+
         try {
             if ($this->getRequest()->isGet()) {
-                $domainInfo = $this->domainUtils->getPleskDomains();
+                $domainInfo = $this->domainUtils->getPleskDomains($this->view);
                 $this->myLogger->log("info", "Successfully retrieved the informations regarding the domains!");
                 $this->_helper->json($domainInfo);
             }
@@ -277,12 +278,13 @@ class ApiController extends pm_Controller_Action
         if ($this->getRequest()->isGet()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
-                    pm_Config::get("DESEC_API_TOKEN")) {
-
+                    pm_Config::get("DESEC_TOKEN")) {
+                    $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
                     $this->_helper->json(["token" => "true"]);
                 }
+
+                $this->myLogger->log("info", "deSEC API token doesn't exist!");
                 $this->_helper->json(["token" => "false"]);
-                $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
 
             } catch(Exception $e) {
                 $this->myLogger->log("error", "Error occurred while retrieving the API token! Error:" . $e->getMessage());

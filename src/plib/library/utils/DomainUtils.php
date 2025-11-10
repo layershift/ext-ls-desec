@@ -36,8 +36,12 @@ class DomainUtils
      * @throws \pm_Exception
      * @throws Exception
      */
-    public function getPleskDomains(): array
+    public function getPleskDomains($view): array
     {
+
+        if (!($view instanceof \Zend_View)) {
+            throw new \RuntimeException('Expected Zend_View in getPleskDomains()');
+        }
         $domainsData = array();
 
         $domains = $this->desecDomains->getDesecDomains();
@@ -47,8 +51,8 @@ class DomainUtils
         );
 
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
-            $domainLink = "/smb/dns-zone/records-list/id/".$pm_Domain->getId()."/type/domain";
-
+//            $domainLink = "/smb/dns-zone/records-list/id/".$pm_Domain->getId()."/type/domain";
+            $domainLink = $view->domainOverviewUrl($pm_Domain);
             if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== Status::STATUS_ERROR->value) {
                 if (isset($domainNameSet[$pm_Domain->getName()])) {
                     $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);

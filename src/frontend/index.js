@@ -1,4 +1,5 @@
 import React from 'react';
+import punycode from 'punycode/';
 import { propTypes } from './utils/constants';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { handleSortByChange, handleSortDirectionChange } from "./elements/SortingMenu/utils";
@@ -107,15 +108,25 @@ export default class App extends React.PureComponent {
             {
                 key: 'domain-name',
                 title: 'Domain',
-                render: row =>
-                    <Link
-                        href={row['domain-link']}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {row['domain-name']}
-                    </Link>
+                render: row => {
+                    const asciiDomain = row['domain-name']
+                        .split('.')
+                        .map(part => punycode.toUnicode(part))
+                        .join('.');
+
+                    console.log(asciiDomain);
+                    return (
+                        <Link
+                            href={row['domain-link']}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {asciiDomain}
+                        </Link>
+                    );
+                }
             },
+
             {
                 key: 'last-sync-status',
                 title: 'Last Sync Status',

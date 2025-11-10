@@ -7,15 +7,14 @@
   "author": "Layershift",
   "license": "MIT",
   "private": null,
-
   "scripts": {
     "prepare": "yarn build",
     "dev": "plesk-ext-sdk dev",
     "build": "plesk-ext-sdk build"
   },
-
   "dependencies": {
     "@plesk/plesk-ext-sdk": "^0.6.3",
-    "axios": "^1.12.2"
+    "axios": "^1.12.2",
+    "punycode": "^2.3.1"
   }
 }
