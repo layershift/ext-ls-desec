@@ -149,7 +149,6 @@ class ApiController extends pm_Controller_Action
     public function registerDomainAction() {
 
         if ($this->getRequest()->isPost()) {
-            $result_desec = [];
 
             $payload = InputSanitizer::readJsonBody(); // list of IDs
             if ($payload === [] || array_values($payload) !== $payload) {
@@ -157,85 +156,29 @@ class ApiController extends pm_Controller_Action
             }
 
             $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
+            $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
 
-            foreach ($ids as $domain_id) {
-                try {
-                    $domain_obj = pm_Domain::getByDomainId($domain_id);
-                    $domain = $domain_obj->getName();
-                    $result_desec[$domain] = $this->desecDomains->addDomain($domain);
+            $addDomainTask = new Modules_LsDesecDns_Task_RegisterDomains();
+            $addDomainTask->setParam('ids', array_values($ids));
 
+            $manager = new pm_LongTask_Manager();
+            $manager->start($addDomainTask);
 
-                } catch (Exception  $e) {
-                    $this->myLogger->log("error", "Error occurred during domain registration with deSEC: " . $e->getMessage());
+            $uid = $addDomainTask->getInstanceId(); // unique per started task
+            $status = $manager->getTasks(['task_syncdnszones']);
 
-                    pm_Domain::getByName($domain)->setSetting(Settings::DESEC_STATUS->value, "Error");
-                    $this->getResponse()->setHttpResponseCode(500);
-
-                    $failureResponse = [ "error" =>
-                        [ "message" =>  $e->getMessage(), "failed_domain" =>  pm_Domain::getByDomainId($domain_id)->getName() ]
-                    ];
-
-                    if(!empty($result_desec)) {
-                        $failureResponse["error"]["results"] = $result_desec;
-                    }
-
-                    $this->_helper->json($failureResponse);
-                }
-            }
-
-            $this->myLogger->log("info", "Successfully registered domains in deSEC:\n" . print_r($payload, true));
-            $this->_helper->json($result_desec);
+            $this->myLogger->log("info", "Successfully started to register domains in deSEC:\n" . print_r($payload, true));
+            $this->_helper->json([
+                'taskUid'  => $uid,
+                'statusUrl'=> $status,
+                'message'  => 'DNS sync started',
+            ]);
         }
     }
 
-//    public function syncDnsZoneAction()
-//    {
-//        if ($this->getRequest()->isPost()) {
-//            $payload = InputSanitizer::readJsonBody();
-//
-//            if ($payload === [] || array_values($payload) !== $payload) {
-//                throw new Exception("Invalid data format!");
-//            }
-//
-//            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
-//
-//            $this->myLogger->log("debug","Ids: " . json_encode($ids));
-//            $summary = array();
-//
-//            foreach ($ids as $domain_id) {
-//                try {
-//                    $summary[$domain_id] = $this->domainUtils->syncDomain($domain_id);
-//
-//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS");
-//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $summary[$domain_id]['timestamp']);
-//
-//                } catch(Exception $e) {
-//                    $this->myLogger->log("error","Error occurred during DNS synchronization with deSEC: " . $e->getMessage());
-//
-//
-//                    $timestamp = new DateTime()->format('Y-m-d H:i:s T');
-//
-//                    $failureResponse = [ "error" =>
-//                        [ "message" =>  $e->getMessage(), "domainId" => $domain_id, "timestamp" => $timestamp ]
-//                    ];
-//
-//                    if(!empty($summary)) {
-//                        $failureResponse["error"]["results"] = $summary;
-//                    }
-//
-//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED");
-//                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
-//
-//                    $this->_helper->json($failureResponse);
-//                }
-//            }
-//
-//            $this->myLogger->log("info", "Successfully synced the DNS zone of the domains:\n" . print_r($payload, true));
-//            $this->_helper->json($summary);
-//
-//        }
-//    }
-
+    /**
+     * @throws pm_Exception
+     */
     public function syncDnsZoneAction()
     {
         if (!$this->getRequest()->isPost()) {
@@ -256,20 +199,21 @@ class ApiController extends pm_Controller_Action
         $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
 
         $task = new Modules_LsDesecDns_Task_SyncDnsZones();
+
         $task->setParam('ids', array_values($ids));
 
-        // Optional: run without domain context; or use a specific pm_Domain if you prefer
         $manager = new pm_LongTask_Manager();
         $manager->start($task);
 
         $uid = $task->getInstanceId(); // unique per started task
+        $status = $manager->getTasks(['task_syncdnszones']);
 
-        $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid);
+        $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid . ". Progress:" . $task->getStatus());
 
         // Return a tiny descriptor that clients can poll
         $this->_helper->json([
             'taskUid'  => $uid,
-            'statusUrl'=> pm_Context::getBaseUrl() . 'api/task-status?uid=' . urlencode($uid),
+            'statusUrl'=> $status,
             'message'  => 'DNS sync started',
         ]);
     }

@@ -17,9 +17,10 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     {
         $status = $this->getStatus();
         $summary = (array) $this->getParam('summary');
+        $domainName = $this->getParam('domainName');
 
         return match ($status) {
-            static::STATUS_RUNNING => 'Syncing DNS Zones...',
+            static::STATUS_RUNNING => 'Syncing DNS zone of ' . $domainName . '...' . PHP_EOL,
             static::STATUS_DONE => $this->formatDoneMessage($summary),
             static::STATUS_ERROR => $this->formatErrorMessage($summary),
             default => '',
@@ -33,22 +34,8 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         }
 
         $totalDomains = count($summary);
-        $successCount = 0;
-        $failCount = 0;
 
-        foreach ($summary as $result) {
-            if (isset($result['error'])) {
-                $failCount++;
-            } else {
-                $successCount++;
-            }
-        }
-
-        if ($failCount === 0) {
-            return "DNS zone sync completed successfully ({$successCount} domain(s))";
-        }
-
-        return "DNS zone sync completed with errors ({$successCount} succeeded, {$failCount} failed)";
+        return "DNS zone sync completed successfully ({$totalDomains} domain(s))";
     }
 
     private function formatErrorMessage(array $summary): string
@@ -56,11 +43,68 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $processedCount = count($summary);
 
         if ($processedCount === 0) {
-            return 'DNS zone sync failed';
+            return 'DNS zone sync failed (no domains processed).';
         }
 
-        return "DNS zone sync failed (processed {$processedCount} domain(s) before error)";
+        $failed = [];
+        $succeededCount = 0;
+
+        foreach ($summary as $domainId => $result) {
+            if (!empty($result['error'])) {
+                $failed[] = (string)$domainId;
+            } else {
+                $succeededCount++;
+            }
+        }
+
+        $failCount = count($failed);
+
+        // Resolve labels for all failed IDs (best-effort). If resolution fails or returns empty,
+        // fall back to the raw ID string.
+        $failedLabels = array_map(function (string $id) {
+            try {
+                $label = (string)$this->resolveDomainLabel($id);
+                return $label !== '' ? $label : $id;
+            } catch (\Throwable $e) {
+                return $id;
+            }
+        }, $failed);
+
+        $failedPart = $failCount === 0
+            ? 'no failures'
+            : implode(', ', $failedLabels);
+
+        $domainWord = $processedCount === 1 ? 'domain' : 'domains';
+
+        return sprintf(
+            'DNS zone sync failed (processed %d %s — %d %s, %d %s: %s)',
+            $processedCount,
+            $domainWord,
+            $succeededCount,
+            'succeeded',
+            $failCount,
+            'failed',
+            $failedPart
+        );
     }
+
+    private function resolveDomainLabel(string $domainId): string
+    {
+        try {
+            $d = pm_Domain::getByDomainId((int)$domainId);
+            if ($d) {
+                $name = $d->getName();
+                if (!empty($name)) {
+                    return "{$name} ({$domainId})";
+                }
+            }
+        } catch (Exception $e) {
+            // ignore - fall through to id-only label
+        }
+
+        return $domainId;
+    }
+
 
     public function run()
     {
@@ -76,6 +120,12 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         foreach ($ids as $domainId) {
             try {
+                if ($i === 3) {
+                    throw new Exception("Testing something: $i");
+                }
+
+                $this->setParam('domainName', pm_Domain::getByDomainId($domainId)->getName());
+
                 $result = $domainUtils->syncDomain($domainId);
                 $summary[$domainId] = $result;
 
@@ -85,31 +135,45 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $ts);
 
             } catch (Exception $e) {
-                // Persist failure per-domain but keep the task going for the rest
+                // Timestamp for the failure
                 $timestamp = new DateTime()->format('Y-m-d H:i:s T');
 
+                // Persist failure in the in-memory summary
                 $summary[$domainId] = [
                     'error' => [
-                        'message'  => $e->getMessage(),
-                        'domainId' => $domainId,
-                        'timestamp'=> $timestamp,
+                        'message'   => $e->getMessage(),
+                        'timestamp' => $timestamp,
                     ],
                 ];
 
+                // Persist domain settings for this failed domain
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'FAILED');
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
 
+                // Persist the partial summary to the long-task params *before* throwing,
+                // so the UI / onError() can see what domain failed.
+                $this->setParam('summary', $summary);
+
+                // Log the error
                 $myLogger->log('error', "Error syncing $domainId: " . $e->getMessage());
+
+                // Rethrow
+                throw new Exception($e->getMessage(), 0, $e);
             }
 
             $i++;
+
             if ($this->trackProgress && $count > 0) {
                 $this->updateProgress((int) floor($i * 100 / $count));
             }
 
-            // Keep latest partial results in task params for status polling
             $this->setParam('summary', $summary);
         }
+    }
+
+    public function onStart()
+    {
+
     }
 
     public function onDone() {
@@ -117,8 +181,14 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $this->setParam('summary', $summary);
     }
 
-    public function onError(Exception $e) {
+    public function onError(Exception $e)
+    {
         $summary = (array) $this->getParam('summary');
         $this->setParam('summary', $summary);
+
+        // Log the outer exception
+        $myLogger = new MyLogger();
+        $myLogger->log('error', "Task '{$this->getId()}' failed: " . $e->getMessage() . " Summary: " . json_encode($summary, true) . PHP_EOL);
     }
+
 }

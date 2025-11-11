@@ -114,7 +114,6 @@ export default class App extends React.PureComponent {
                         .map(part => punycode.toUnicode(part))
                         .join('.');
 
-                    console.log(asciiDomain);
                     return (
                         <Link
                             href={row['domain-link']}

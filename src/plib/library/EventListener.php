@@ -33,40 +33,64 @@ class Modules_LsDesecDns_EventListener implements EventListener
                 $logger->log("debug","[ event-listener ] Domain's DNS zone was updated!");
                 $domain_id = $objectId;
                 $desec = new Domains();
-                $domain_name = $oldValues["Domain Name"]; //here
+                $utils = new DomainUtils();
+                $oldDomainName = $oldValues["Domain Name"];
+                $newDomainName = $newValues["Domain Name"];
 
-                if(pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true" && $desec->getDomain($domain_name)) {
+            if($oldDomainName === $newDomainName) {
+                if (pm_Domain::getByDomainId($domain_id)->getSetting(Settings::AUTO_SYNC_STATUS->value, "false") === "true" && $desec->getDomain($oldDomainName)) {
                     try {
-                        $domain_name = $newValues["Domain Name"];
-                        $utils = new DomainUtils();
 
                         $summary = $utils->syncDomain($domain_id);
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS(auto-sync)");
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
 
-                        $logger->log("debug", "[ event-listener ] Successfully synced the DNS zone of the " . $domain_name . " in deSEC:\n" . json_encode($summary, true));
+                        $logger->log("debug", "[ event-listener ] Successfully synced the DNS zone of the " . $oldDomainName . " in deSEC:\n" . json_encode($summary, true));
 
-                    } catch(Exception $e) {
+                    } catch (Exception $e) {
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED(auto-sync)");
                         pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
 
-                        $logger->log("error","[ event-listener ] Error occurred during DNS synchronization with deSEC of " . $domain_name . ": " . $e->getMessage());
+                        $logger->log("error", "[ event-listener ] Error occurred during DNS synchronization with deSEC of " . $oldDomainName . ": " . $e->getMessage());
                     }
                 }
+            } else {
+                $logger->log("debug","[ event-listener ] Domain's name was changed from " . $oldDomainName . " to " . $newValues["Domain Name"] . PHP_EOL . "Domain's ID: " . $domain_id);
+
+                # Adding domain and sync it with deSEC, and delete it(take DOMAIN_RETENTION into consideration)
+                try {
+                    $addDomainResponse = $desec->addDomain($newDomainName);
+                    $syncDomainResponse = $utils->syncDomain($domain_id);
+
+                    if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false")) {
+                        $response = $desec->deleteDomain($oldDomainName);
+                    }
+
+                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "SUCCESS(auto-sync)");
+                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
+
+                } catch (Exception $e) {
+                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_STATUS->value, "FAILED(auto-sync)");
+                    pm_Domain::getByDomainId($domain_id)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, new DateTime()->format('Y-m-d H:i:s T'));
+
+                    $logger->log("error", "[ event-listener ] Error occurred during DNS synchronization with deSEC of " . $oldDomainName . ": " . $e->getMessage());
+                }
+
+            }
                 break;
 
             case 'domain_delete':
                 $desec = new Domains();
-                $domain_name = $oldValues["Domain Name"]; //here
-                $logger->log("debug","[ event-listener ] Domain " . $domain_name . " was deleted!");
+                $oldDomainName = $oldValues["Domain Name"]; //here
+                $logger->log("debug","[ event-listener ] Domain " . $oldDomainName . " was deleted!");
 
-                $logger->log("debug", pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") . " " . $desec->getDomain($domain_name));
+                $logger->log("debug", pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") . " " . $desec->getDomain($oldDomainName));
 
-                if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false") && $desec->getDomain($domain_name)) {
+                if((pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "false") && $desec->getDomain($oldDomainName)) {
 
                     try {
-                        $response = $desec->deleteDomain($domain_name);
-                        $logger->log("debug","[ event-listener ] Domain " . $domain_name . " was successfully removed from deSEC! Details: " . json_encode($response, true));
+                        $response = $desec->deleteDomain($oldDomainName);
+                        $logger->log("debug","[ event-listener ] Domain " . $oldDomainName . " was successfully removed from deSEC! Details: " . json_encode($response, true));
 
                     } catch(Exception $e) {
                         $logger->log("error","[ event-listener ]" . $e->getMessage());
