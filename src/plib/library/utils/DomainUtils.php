@@ -66,7 +66,6 @@ class DomainUtils
                 $pm_Domain->setSetting(Settings::AUTO_SYNC_STATUS->value, "false");
             }
 
-
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
                 'domain-name' => idn_to_ascii($pm_Domain->getName()),

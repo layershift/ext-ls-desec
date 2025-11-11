@@ -99,6 +99,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
         $desecDomains = new Domains();
         $summary = [];
+        $successfulIds = [];
 
         foreach ($ids as $domainId) {
             $i++;
@@ -113,10 +114,8 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
                 $result = $desecDomains->addDomain($domainName);
 
                 // Record success in summary
-                $summary[$domainId] = [
-                    'result'    => $result,
-                    'timestamp' => new DateTime()->format('Y-m-d H:i:s T'),
-                ];
+                $summary[$domainId] = $result;
+                $successfulIds[] = (int)$domainId;
 
                 // Persist progress & summary
                 if ($this->trackProgress && $count > 0) {
@@ -125,10 +124,20 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
                 $this->setParam('summary', $summary);
+                $this->setParam('successful_ids', $successfulIds);
 
             } catch (Exception $e) {
-                pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, 'error');
+                pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_ERROR->value);;
+
+                $summary[$domainId] = [
+                    'error' => [
+                        'message'   => $e->getMessage(),
+                        'domain'    => $domainName ?? null,
+                    ],
+                ];
+
                 $this->setParam('summary', $summary);
+                $this->setParam('successful_ids', $successfulIds);
 
                 // Rethrow wrapped exception to fail the long task (fail-fast behavior)
                 throw new Exception($e->getMessage(), 0, $e);
@@ -138,14 +147,35 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         // Final persistence of summary and clear current domainName
         $this->setParam('summary', $summary);
         $this->setParam('domainName', null);
+        $this->setParam('successful_ids', $successfulIds);
     }
 
     public function onDone()
     {
         $myLogger = new MyLogger();
         $summary = (array)$this->getParam('summary');
+        $successfulIds = (array)$this->getParam('successful_ids');
 
-        $myLogger->log('info', "Task '{$this->getId()}' finished successfully. Summary: " . json_encode($summary));
+        $myLogger->log('info', "Registering domain task '{$this->getId()}' finished successfully. Summary: " . json_encode($summary));
+        if(!empty($successfulIds)) {
+            try {
+
+                $syncTask = new Modules_LsDesecDns_Task_SyncDnsZones();
+                $syncTask->setParam('ids', $successfulIds);
+
+                $manager = new pm_LongTask_Manager();
+                $manager->start($syncTask);
+
+                $myLogger->log('info', sprintf(
+                    "Started SyncDnsZones task for registered domains: %s (task: %s)",
+                    implode(', ', $successfulIds),
+                    $syncTask->getInstanceId()
+                ));
+            } catch (Exception $e) {
+                // Log but don't rethrow — onDone must not throw
+                $myLogger->log('error', "Failed to start SyncDnsZones after registration: " . $e->getMessage());
+            }
+        }
     }
 
     public function onError(Exception $e)
