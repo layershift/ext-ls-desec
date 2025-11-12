@@ -1,3 +1,20 @@
+## 1.0.0-5 (November 2025):
+
+---
+
+This release incorporates recommendations from the Plesk Extension Certification team, bringing improved automation, better stability, and critical bug fixes.
+
+### Improvements:
+- Newly registered domains are now automatically synced with deSEC
+- Introduced Plesk Long Task support to improve performance and reliability of API operations
+- Added the ability to open a domain's details tab directly from the extension
+- Added full IDN (Internationalized Domain Name) support
+- Domain renames are now handled automatically (re-registration and deSEC sync included)
+
+### Fixes:
+- Fixed an issue where domains deleted from the Plesk dashboard were not removed from deSEC
+- Resolved a problem where the extension continued syncing zones that had already been removed from deSEC
+
 ## 1.0.0-4 (October 2025):
 
 ---
@@ -6,7 +23,7 @@ Following the recommendations of the Plesk Extension Certification team, this re
 
 ### Improvements:
 
-Removed redundant bootstrap.php file and tested the extension installation process.
+- Removed redundant bootstrap.php file and tested the extension installation process.
 
 ### Bug Fixes:
 - Domain wasn't properly deleted from deSEC because of the bool value returned from `normalizeBool` function.
