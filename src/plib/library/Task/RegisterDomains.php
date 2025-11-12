@@ -22,7 +22,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         $domainName = $this->getParam('domainName');
 
         return match ($status) {
-            static::STATUS_RUNNING => 'Registering domains...' . $domainName,
+            static::STATUS_RUNNING => 'Registering domain name....' . $domainName,
             static::STATUS_DONE => $this->formatDoneMessage($summary),
             static::STATUS_ERROR => $this->formatErrorMessage($summary),
             default => '',
@@ -90,6 +90,9 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         return $domainId;
     }
 
+    /**
+     * @throws pm_Exception
+     */
     public function run()
     {
         $myLogger = new MyLogger();
@@ -152,37 +155,41 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
     public function onDone()
     {
-        $myLogger = new MyLogger();
-        $summary = (array)$this->getParam('summary');
-        $successfulIds = (array)$this->getParam('successful_ids');
-
-        $myLogger->log('info', "Registering domain task '{$this->getId()}' finished successfully. Summary: " . json_encode($summary));
-        if(!empty($successfulIds)) {
-            try {
-
-                $syncTask = new Modules_LsDesecDns_Task_SyncDnsZones();
-                $syncTask->setParam('ids', $successfulIds);
-
-                $manager = new pm_LongTask_Manager();
-                $manager->start($syncTask);
-
-                $myLogger->log('info', sprintf(
-                    "Started SyncDnsZones task for registered domains: %s (task: %s)",
-                    implode(', ', $successfulIds),
-                    $syncTask->getInstanceId()
-                ));
-            } catch (Exception $e) {
-                // Log but don't rethrow — onDone must not throw
-                $myLogger->log('error', "Failed to start SyncDnsZones after registration: " . $e->getMessage());
-            }
-        }
+        $this->handleFinish('info', "Registering domain task '{$this->getId()}' finished successfully.");
     }
 
     public function onError(Exception $e)
     {
+        $this->handleFinish('error', "Task '{$this->getId()}' failed: " . $e->getMessage());
+    }
+
+    private function handleFinish(string $level, string $message): void
+    {
         $myLogger = new MyLogger();
         $summary = (array)$this->getParam('summary');
+        $successfulIds = (array)$this->getParam('successful_ids');
 
-        $myLogger->log('error', "Task '{$this->getId()}' failed: " . $e->getMessage() . ' Summary: ' . json_encode($summary));
+        $myLogger->log($level, $message . ' Summary: ' . json_encode($summary));
+
+        if (empty($successfulIds)) {
+            return;
+        }
+
+        try {
+            $syncTask = new Modules_LsDesecDns_Task_SyncDnsZones();
+            $syncTask->setParam('ids', $successfulIds);
+
+            $manager = new pm_LongTask_Manager();
+            $manager->start($syncTask);
+
+            $myLogger->log('debug', sprintf(
+                "Started SyncDnsZones task for registered domains: %s (task: %s)",
+                implode(', ', $successfulIds),
+                $syncTask->getInstanceId()
+            ));
+        } catch (Exception $e) {
+            // Log but don't throw — must never break onDone/onError
+            $myLogger->log('error', "Failed to start SyncDnsZones after registration: " . $e->getMessage());
+        }
     }
 }

@@ -15,7 +15,9 @@ class Modules_LsDesecDns_EventListener implements EventListener
     {
         return [
             'domain_dns_update',
-            'domain_delete'
+            'domain_delete',
+            'phys_domain_delete'
+
         ];
     }
 
@@ -81,7 +83,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
             case 'domain_delete':
                 $desec = new Domains();
-                $oldDomainName = $oldValues["Domain Name"]; //here
+                $oldDomainName = idn_to_ascii($oldValues["Domain Name"]); //here
                 $logger->log("debug","[ event-listener ] Domain " . $oldDomainName . " was deleted!");
 
                 $logger->log("debug", pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") . " " . $desec->getDomain($oldDomainName));

@@ -22,7 +22,7 @@ class Domains
     }
 
     public function getDomain($domain) {
-        $res = $this->client->request('GET', 'domains/' . $domain . '/');
+        $res = $this->client->request('GET', 'domains/' . $domain . '/', ['accept404' => true]);
 
         if($res['code'] === 200) {
             $this->myLogger->log("debug", "Domain {$domain} successfully fetched!. Response: " . PHP_EOL . $res['body']);

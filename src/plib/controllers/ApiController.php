@@ -12,7 +12,7 @@ use PleskExt\Utils\MyLogger;
 class ApiController extends pm_Controller_Action
 {
 
-    protected $_accessLevel = 'admin';
+
 
     private DomainUtils $domainUtils;
     private Domains $desecDomains;
@@ -21,17 +21,20 @@ class ApiController extends pm_Controller_Action
     /**
      * @throws pm_Exception
      */
+    protected $_accessLevel = 'admin';
     public function init() {
-        parent::init();
-
-        if (!pm_Session::getClient()->isAdmin()) {
-            throw new pm_Exception('Permission denied');
+        // Hard block before anything else runs
+        if (!pm_Session::getClient() || !pm_Session::getClient()->isAdmin()) {
+            exit;
         }
+
+        parent::init();
 
         $this->domainUtils = new DomainUtils();
         $this->desecDomains = new Domains();
         $this->myLogger = new MyLogger();
     }
+
 
     public function getDomainsInfoAction(): void
     {
