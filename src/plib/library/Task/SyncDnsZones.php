@@ -120,9 +120,9 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         foreach ($ids as $domainId) {
             try {
-                if ($i === 3) {
-                    throw new Exception("Testing something: $i");
-                }
+//                if ($i === 3) {
+//                    throw new Exception("Testing something: $i");
+//                }
 
                 $this->setParam('domainName', pm_Domain::getByDomainId($domainId)->getName());
 
