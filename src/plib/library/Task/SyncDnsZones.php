@@ -34,6 +34,8 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         }
 
         $totalDomains = count($summary);
+        $manager = new pm_LongTask_Manager();
+
 
         return "DNS zone sync completed successfully ({$totalDomains} domain(s))";
     }
@@ -120,9 +122,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         foreach ($ids as $domainId) {
             try {
-//                if ($i === 3) {
-//                    throw new Exception("Testing something: $i");
-//                }
 
                 $this->setParam('domainName', pm_Domain::getByDomainId($domainId)->getName());
 
@@ -176,12 +175,16 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
     }
 
-    public function onDone() {
+    public function onDone(): void
+    {
         $summary = (array) $this->getParam('summary');
         $this->setParam('summary', $summary);
     }
 
-    public function onError(Exception $e)
+    /**
+     * @throws pm_Exception
+     */
+    public function onError(Exception $e): void
     {
         $summary = (array) $this->getParam('summary');
         $this->setParam('summary', $summary);

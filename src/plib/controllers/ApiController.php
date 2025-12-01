@@ -181,6 +181,7 @@ class ApiController extends pm_Controller_Action
 
     /**
      * @throws pm_Exception
+     * @throws Exception
      */
     public function syncDnsZoneAction()
     {
@@ -188,6 +189,7 @@ class ApiController extends pm_Controller_Action
             throw new Exception('POST required');
         }
 
+        $manager = new pm_LongTask_Manager();
         $payload = InputSanitizer::readJsonBody();
 
         if ($payload === [] || array_values($payload) !== $payload) {
@@ -199,13 +201,29 @@ class ApiController extends pm_Controller_Action
             $payload
         ));
 
-        $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
-
         $task = new Modules_LsDesecDns_Task_SyncDnsZones();
-
         $task->setParam('ids', array_values($ids));
 
-        $manager = new pm_LongTask_Manager();
+        $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
+        $this->myLogger->log('info', 'Task count:' . count($manager->getTasks(['task_syncdnszones'])));
+
+
+        $tasks = $manager->getTasks(['task_syncdnszones']);
+
+        foreach($tasks as $task) {
+            $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
+
+            if($task->getStatus() === "running") {
+                $this->_helper->json([
+                    'error' => [
+                        'message' => 'DNS sync already running.'
+                    ],
+                ]);
+
+                return;
+            }
+        }
+
         $manager->start($task);
 
         $uid = $task->getInstanceId(); // unique per started task
@@ -219,6 +237,8 @@ class ApiController extends pm_Controller_Action
             'statusUrl'=> $status,
             'message'  => 'DNS sync started',
         ]);
+
+
     }
 
     public function retrieveTokenAction() {
