@@ -163,18 +163,32 @@ class ApiController extends pm_Controller_Action
 
             $addDomainTask = new Modules_LsDesecDns_Task_RegisterDomains();
             $addDomainTask->setParam('ids', array_values($ids));
-
             $manager = new pm_LongTask_Manager();
-            $manager->start($addDomainTask);
 
-            $uid = $addDomainTask->getInstanceId(); // unique per started task
-            $status = $manager->getTasks(['task_syncdnszones']);
+            $tasks = $manager->getTasks([$addDomainTask->getId()]);
+
+            foreach($tasks as $task) {
+                $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
+
+                if($task->getStatus() === "running") {
+                    $this->_helper->json([
+                        'error' => [
+                            'message' => 'DNS sync already running.'
+                        ],
+                    ]);
+
+                    return;
+                }
+            }
+
+            $manager->start($addDomainTask);
+            $uid = $addDomainTask->getInstanceId();
+
 
             $this->myLogger->log("info", "Successfully started to register domains in deSEC:\n" . print_r($payload, true));
             $this->_helper->json([
                 'taskUid'  => $uid,
-                'statusUrl'=> $status,
-                'message'  => 'DNS sync started',
+                'message'  => 'Register domains task started!',
             ]);
         }
     }
@@ -201,14 +215,13 @@ class ApiController extends pm_Controller_Action
             $payload
         ));
 
-        $task = new Modules_LsDesecDns_Task_SyncDnsZones();
-        $task->setParam('ids', array_values($ids));
+        $syncDomainTask = new Modules_LsDesecDns_Task_SyncDnsZones();
+        $syncDomainTask->setParam('ids', array_values($ids));
 
         $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
-        $this->myLogger->log('info', 'Task count:' . count($manager->getTasks(['task_syncdnszones'])));
+        $this->myLogger->log('debug', 'Task count:' . count($manager->getTasks([$syncDomainTask->getId()])));
 
-
-        $tasks = $manager->getTasks(['task_syncdnszones']);
+        $tasks = $manager->getTasks([$syncDomainTask->getId()]);
 
         foreach($tasks as $task) {
             $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
@@ -224,17 +237,14 @@ class ApiController extends pm_Controller_Action
             }
         }
 
-        $manager->start($task);
+        $manager->start($syncDomainTask);
 
-        $uid = $task->getInstanceId(); // unique per started task
-        $status = $manager->getTasks(['task_syncdnszones']);
-
+        $uid = $task->getInstanceId();
         $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid . ". Progress:" . $task->getStatus());
 
         // Return a tiny descriptor that clients can poll
         $this->_helper->json([
             'taskUid'  => $uid,
-            'statusUrl'=> $status,
             'message'  => 'DNS sync started',
         ]);
 
