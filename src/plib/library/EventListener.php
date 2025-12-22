@@ -16,7 +16,8 @@ class Modules_LsDesecDns_EventListener implements EventListener
         return [
             'domain_dns_update',
             'domain_delete',
-            'subdomain_dns_update'
+            'subdomain_dns_update',
+            'site_dns_update'
         ];
     }
 
@@ -30,9 +31,13 @@ class Modules_LsDesecDns_EventListener implements EventListener
             json_encode($oldValues) . " " . json_encode($newValues)
         );
 
+        $logger->log('debug', 'ACTION RAW: [' . $action . ']');
+
+
         match ($action) {
             'domain_dns_update',
-            'subdomain_dns_update'
+            'subdomain_dns_update',
+            'site_dns_update'
             => $this->handleDnsUpdate($objectId, $oldValues, $newValues, $logger),
 
             'domain_delete'
