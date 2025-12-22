@@ -223,35 +223,33 @@ class ApiController extends pm_Controller_Action
 
         $tasks = $manager->getTasks([$syncDomainTask->getId()]);
 
-        foreach($tasks as $task) {
-            $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
-
-            if($task->getStatus() === "running") {
-                $this->_helper->json([
-                    'error' => [
-                        'message' => 'DNS sync already running.'
-                    ],
-                ]);
-
-                return;
-            }
-        }
+//        foreach($tasks as $task) {
+//            $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
+//
+//            if($task->getStatus() === "running") {
+//                $this->_helper->json([
+//                    'error' => [
+//                        'message' => 'DNS sync already running.'
+//                    ],
+//                ]);
+//
+//                return;
+//            }
+//        }
 
         $manager->start($syncDomainTask);
 
-        $uid = $task->getInstanceId();
-        $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid . ". Progress:" . $task->getStatus());
+        $uid = $syncDomainTask->getInstanceId();
+        $this->myLogger->log('info', 'Started DNS sync long task uid=' . $uid . ". Progress:" . $syncDomainTask->getStatus());
 
-        // Return a tiny descriptor that clients can poll
         $this->_helper->json([
             'taskUid'  => $uid,
             'message'  => 'DNS sync started',
         ]);
-
-
     }
 
-    public function retrieveTokenAction() {
+    public function retrieveTokenAction(): void
+    {
         if ($this->getRequest()->isGet()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||

@@ -95,6 +95,16 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
      */
     public function run()
     {
+        $manager = new pm_LongTask_Manager();
+        $tasks = $manager->getTasks([$this->getId()]);
+        $currentTaskId = $this->getInstanceId();
+
+        foreach($tasks as $task) {
+            if($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
+                throw new Exception("DNS Sync already running!");
+            }
+        }
+
         $myLogger = new MyLogger();
         $ids = (array)$this->getParam('ids');
         $count = count($ids);

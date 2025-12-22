@@ -119,6 +119,21 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $domainUtils = new DomainUtils();
         $myLogger = new MyLogger();
 
+        $manager = new pm_LongTask_Manager();
+        $tasks = $manager->getTasks([$this->getId()]);
+        $currentTaskId = $this->getInstanceId();
+
+        $myLogger->log('debug', 'Current task id: ' . $currentTaskId);
+
+        foreach($tasks as $task) {
+            $myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
+
+            if($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
+                throw new Exception("DNS Sync already running!");
+            }
+        }
+
+
 
         foreach ($ids as $domainId) {
             try {

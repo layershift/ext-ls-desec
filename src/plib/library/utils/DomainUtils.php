@@ -53,13 +53,13 @@ class DomainUtils
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
 //            $domainLink = "/smb/dns-zone/records-list/id/".$pm_Domain->getId()."/type/domain";
             $domainLink = $view->domainOverviewUrl($pm_Domain);
-            if($pm_Domain->getSetting(Settings::DESEC_STATUS->value) !== Status::STATUS_ERROR->value) {
-                if (isset($domainNameSet[$pm_Domain->getName()])) {
-                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
-                } else {
-                    $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_NOT_REGISTERED->value);
-                }
+
+            if (isset($domainNameSet[$pm_Domain->getName()])) {
+                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
+            } else {
+                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_NOT_REGISTERED->value);
             }
+
 
             if($pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value) === "true" &&
                 $pm_Domain->getSetting(Settings::DESEC_STATUS->value) === Status::STATUS_NOT_REGISTERED->value) {
@@ -68,7 +68,7 @@ class DomainUtils
 
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
-                'domain-name' => idn_to_ascii($pm_Domain->getName()),
+                'domain-name' => $pm_Domain->getDisplayName(),
                 'last-sync-attempt' => $pm_Domain->getSetting(Settings::LAST_SYNC_ATTEMPT->value, "No date"),
                 'last-sync-status' => $pm_Domain->getSetting(Settings::LAST_SYNC_STATUS->value, "No data"),
                 'dns-status' => $pm_Domain->getDnsZone()->isEnabled(),
@@ -199,12 +199,10 @@ class DomainUtils
 
         foreach ($pleskRrsets as $rrset) {
 
-            $this->myLogger->log("debug", "Something something 1" . $domainName . " " . $rrset['subname'] . " " . $rrset['type']);
 
             $response = $desec->getSpecificRRset($domainName, $rrset['subname'], $rrset['type']);
             $desecRRset = json_decode($response['response'], true);
 
-            $this->myLogger->log("debug", "Something something 2");
 
             $pleskRecords = $rrset['records'];
             $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
