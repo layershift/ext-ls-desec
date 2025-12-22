@@ -86,7 +86,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
         // Domain rename
         $logger->log(
             "debug",
-            "[ event-listener ] Domain renamed {$oldDomainName} → {$newDomainName} (ID={$domainId})"
+            "[ event-listener ] Domain renamed {$oldDomainName} => {$newDomainName} (ID={$domainId})"
         );
 
         try {
@@ -109,6 +109,40 @@ class Modules_LsDesecDns_EventListener implements EventListener
             );
         }
     }
+
+    private function handleDomainDelete(array $oldValues, MyLogger $logger): void
+    {
+        $desec = new Domains();
+        $domainName = $this->toAsciiDomain($oldValues['Domain Name'] ?? '');
+
+        if ($domainName === '') {
+            $logger->log("error", "[ event-listener ] Missing Domain Name in delete event");
+            return;
+        }
+
+        $logger->log("debug", "[ event-listener ] Domain {$domainName} deleted");
+
+        $retentionEnabled =
+            pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "true";
+
+        if ($retentionEnabled || !$desec->getDomain($domainName)) {
+            return;
+        }
+
+        try {
+            $response = $desec->deleteDomain($domainName);
+            $logger->log(
+                "debug",
+                "[ event-listener ] Removed {$domainName} from deSEC: " . json_encode($response, true)
+            );
+        } catch (Exception $e) {
+            $logger->log(
+                "error",
+                "[ event-listener ] deSEC delete error for {$domainName}: " . $e->getMessage()
+            );
+        }
+    }
+
 
     private function markSyncResult(pm_Domain $domain, bool $success): void
     {

@@ -221,22 +221,6 @@ class ApiController extends pm_Controller_Action
         $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
         $this->myLogger->log('debug', 'Task count:' . count($manager->getTasks([$syncDomainTask->getId()])));
 
-        $tasks = $manager->getTasks([$syncDomainTask->getId()]);
-
-//        foreach($tasks as $task) {
-//            $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
-//
-//            if($task->getStatus() === "running") {
-//                $this->_helper->json([
-//                    'error' => [
-//                        'message' => 'DNS sync already running.'
-//                    ],
-//                ]);
-//
-//                return;
-//            }
-//        }
-
         $manager->start($syncDomainTask);
 
         $uid = $syncDomainTask->getInstanceId();
