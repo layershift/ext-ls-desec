@@ -158,7 +158,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
         $domain->setSetting(
             Settings::LAST_SYNC_ATTEMPT->value,
-            (new DateTime())->format('Y-m-d H:i:s T')
+            new DateTime()->format('Y-m-d H:i:s T')
         );
     }
 
@@ -176,11 +176,6 @@ class Modules_LsDesecDns_EventListener implements EventListener
         return $domain;
     }
 
-
-
-    /**
-     * @throws pm_Exception
-     */
 }
 
 return new Modules_LsDesecDns_EventListener();

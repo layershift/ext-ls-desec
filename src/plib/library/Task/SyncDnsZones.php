@@ -61,8 +61,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         $failCount = count($failed);
 
-        // Resolve labels for all failed IDs (best-effort). If resolution fails or returns empty,
-        // fall back to the raw ID string.
         $failedLabels = array_map(function (string $id) {
             try {
                 $label = (string)$this->resolveDomainLabel($id);
@@ -133,8 +131,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
             }
         }
 
-
-
         foreach ($ids as $domainId) {
             try {
 
@@ -149,7 +145,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $ts);
 
             } catch (Exception $e) {
-                // Timestamp for the failure
                 $timestamp = new DateTime()->format('Y-m-d H:i:s T');
 
                 // Persist failure in the in-memory summary
@@ -164,11 +159,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'FAILED');
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $timestamp);
 
-                // Persist the partial summary to the long-task params *before* throwing,
-                // so the UI / onError() can see what domain failed.
                 $this->setParam('summary', $summary);
-
-                // Log the error
                 $myLogger->log('error', "Error syncing $domainId: " . $e->getMessage());
 
                 // Rethrow
@@ -193,7 +184,11 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     public function onDone(): void
     {
         $summary = (array) $this->getParam('summary');
-        $this->setParam('summary', $summary);
+        $this->setParam('output', $summary);
+
+        $myLogger = new MyLogger();
+        $myLogger->log('info', "Params: " . json_encode($this->getParams()) . PHP_EOL);
+
     }
 
     /**

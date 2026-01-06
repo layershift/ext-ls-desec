@@ -13,11 +13,15 @@ export const handleAddDomainToDesec = async function () {
 
 
 export const handleDNSRecordsSync = async function () {
+
+
     try {
         const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/sync-dns-zone`,
             [...this.state.selectedDomains]
         );
+
+        console.log("Sync response: ", data);
 
     } catch(error) {
         const key = Math.random().toString();

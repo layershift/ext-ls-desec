@@ -29,12 +29,13 @@ import {
     FormFieldText
 } from '@plesk/ui-library';
 
-export default class App extends React.PureComponent {
+export default class App extends Component {
+
     static propTypes = propTypes;
 
     state = states;
 
-    async componentDidMount() {
+    componentDidMount = async () => {
         await checkTokenExists.call(this);
 
         if (this.state.tokenStatus === "true") {
@@ -42,14 +43,25 @@ export default class App extends React.PureComponent {
         } else {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
-                emptyViewDescription: "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
+                emptyViewDescription:
+                    "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
                 isFormOpen: true,
                 listLoading: false
             });
         }
 
-         await getDomainRetentionStatus.call(this);
-    }
+        await getDomainRetentionStatus.call(this);
+
+        const observer = window.Jsw.Observer;
+        this._onPleskTaskComplete = (payload) => {
+            console.log("plesk:taskComplete event received:", payload);
+        };
+
+        observer.addEventListener('plesk:taskComplete', this._onPleskTaskComplete);
+
+
+    };
+
 
     getFilteredSortedDomains() {
         const { domains, searchQuery, sortingBy, sortingDirection } = this.state;
@@ -89,6 +101,9 @@ export default class App extends React.PureComponent {
 
         return sorted;
     }
+
+
+
 
 
     renderColumns(allSelected, isIndeterminate, selectedDomains) {
@@ -181,7 +196,6 @@ export default class App extends React.PureComponent {
     }
 
     render() {
-        console.log("type: ", this.props);
 
         const {
             domains,

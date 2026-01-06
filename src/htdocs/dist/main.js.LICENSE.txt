@@ -1,16 +1,12 @@
-/*
-object-assign
-(c) Sindre Sorhus
-@license MIT
-*/
-
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */
 
-/** @license React v16.14.0
- * react.production.min.js
+/**
+ * react-router v7.11.0
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Remix Software Inc.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
  */
