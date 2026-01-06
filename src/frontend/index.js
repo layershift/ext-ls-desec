@@ -57,9 +57,8 @@ export default class App extends Component {
             console.log("plesk:taskComplete event received:", payload);
         };
 
+
         observer.addEventListener('plesk:taskComplete', this._onPleskTaskComplete);
-
-
     };
 
 
