@@ -140,7 +140,6 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
                 $this->setParam('successful_ids', $successfulIds);
 
             } catch (Exception $e) {
-                pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_ERROR->value);;
 
                 $summary[$domainId] = [
                     'error' => [

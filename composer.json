@@ -24,7 +24,8 @@
   "require": {
     "ext-curl": "*",
     "ext-ctype": "*",
-    "ext-intl": "*"
+    "ext-intl": "*",
+    "plesk/pm-api-stubs": "*"
   }
 }
 

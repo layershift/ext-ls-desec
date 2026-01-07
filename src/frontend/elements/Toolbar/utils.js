@@ -21,8 +21,6 @@ export const handleDNSRecordsSync = async function () {
             [...this.state.selectedDomains]
         );
 
-        console.log("Sync response: ", data);
-
     } catch(error) {
         const key = Math.random().toString();
         console.error(error);

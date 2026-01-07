@@ -220,7 +220,7 @@ class ApiController extends pm_Controller_Action
 
         $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
         $this->myLogger->log('debug', 'Task count:' . count($manager->getTasks([$syncDomainTask->getId()])));
-
+        $this->myLogger->log('debug', "Params: " . json_encode($syncDomainTask->getParams()) . PHP_EOL);
         $manager->start($syncDomainTask);
 
         $uid = $syncDomainTask->getInstanceId();

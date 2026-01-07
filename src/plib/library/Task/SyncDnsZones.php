@@ -4,7 +4,8 @@ use PleskExt\Utils\Settings;
 use PleskExt\Utils\DomainUtils;
 use PleskExt\Utils\MyLogger;
 
-class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
+class
+Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 {
     public $trackProgress = true;
     public $hidden = false;
@@ -34,8 +35,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         }
 
         $totalDomains = count($summary);
-        $manager = new pm_LongTask_Manager();
-
 
         return "DNS zone sync completed successfully ({$totalDomains} domain(s))";
     }
@@ -88,6 +87,33 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         );
     }
 
+    public function getOutputSummary(): array
+    {
+        $summary = (array) $this->getParam('summary');
+        if (empty($summary)) {
+            return [];
+        }
+
+        $lines = [];
+        foreach ($summary as $domainId => $result) {
+            $domainLabel = $this->resolveDomainLabel((string)$domainId);
+
+            if (isset($result['error'])) {
+                $lines[] = "✘ {$domainLabel}: Failed - " . $result['error']['message'];
+            } else {
+                $changes = [];
+                if (!empty($result['missing'])) $changes[] = count($result['missing']) . " added";
+                if (!empty($result['modified'])) $changes[] = count($result['modified']) . " updated";
+                if (!empty($result['deleted'])) $changes[] = count($result['deleted']) . " removed";
+
+                $changeStr = empty($changes) ? "no changes" : implode(', ', $changes);
+                $lines[] = "✔ {$domainLabel}: Success ({$changeStr})";
+            }
+        }
+
+        return $lines;
+    }
+
     private function resolveDomainLabel(string $domainId): string
     {
         try {
@@ -106,7 +132,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     }
 
 
-    public function run()
+    public function run(): void
     {
         /** @var array<int> $ids */
         $ids = (array) $this->getParam('ids');
@@ -139,10 +165,9 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 $result = $domainUtils->syncDomain($domainId);
                 $summary[$domainId] = $result;
 
-                $ts = $result['timestamp'] ?? new DateTime()->format('Y-m-d H:i:s T');
 
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'SUCCESS');
-                pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $ts);
+                pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $result['timestamp']);
 
             } catch (Exception $e) {
                 $timestamp = new DateTime()->format('Y-m-d H:i:s T');
@@ -173,6 +198,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
             }
 
             $this->setParam('summary', $summary);
+            $this->setParam('output', "Something");
         }
     }
 
@@ -183,11 +209,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
     public function onDone(): void
     {
-        $summary = (array) $this->getParam('summary');
-        $this->setParam('output', $summary);
-
-        $myLogger = new MyLogger();
-        $myLogger->log('info', "Params: " . json_encode($this->getParams()) . PHP_EOL);
 
     }
 
