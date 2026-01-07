@@ -180,7 +180,8 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                         'timestamp' => $timestamp,
                     ],
                 ];
-                $additionalData[$domainId] = ['status' => 'SUCCESS', 'timestamp' => $result['timestamp']];
+                
+                $additionalData[$domainId] = ['status' => 'FAILED', 'timestamp' => $timestamp];
 
                 // Persist domain settings for this failed domain
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'FAILED');
