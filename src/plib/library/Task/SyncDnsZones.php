@@ -135,10 +135,10 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     public function run(): void
     {
         /** @var array<int> $ids */
-        $ids = (array) $this->getParam('ids');
+        $ids = (array)$this->getParam('ids');
         $summary = [];
-        $count   = count($ids);
-        $i       = 0;
+        $count = count($ids);
+        $i = 0;
 
         $domainUtils = new DomainUtils();
         $myLogger = new MyLogger();
@@ -149,10 +149,10 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         $myLogger->log('debug', 'Current task id: ' . $currentTaskId);
 
-        foreach($tasks as $task) {
+        foreach ($tasks as $task) {
             $myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
 
-            if($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
+            if ($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
                 throw new Exception("DNS Sync already running!");
             }
         }
@@ -175,7 +175,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 // Persist failure in the in-memory summary
                 $summary[$domainId] = [
                     'error' => [
-                        'message'   => $e->getMessage(),
+                        'message' => $e->getMessage(),
                         'timestamp' => $timestamp,
                     ],
                 ];
@@ -194,14 +194,14 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
             $i++;
 
             if ($this->trackProgress && $count > 0) {
-                $this->updateProgress((int) floor($i * 100 / $count));
+                $this->updateProgress((int)floor($i * 100 / $count));
             }
 
             $this->setParam('summary', $summary);
-            $this->setParam('output', "Something");
         }
-    }
 
+        $this->setParam('output', $this->getOutputSummary());
+    }
     public function onStart()
     {
 

@@ -55,6 +55,13 @@ export default class App extends Component {
         const observer = window.Jsw.Observer;
         this._onPleskTaskComplete = (payload) => {
             console.log("plesk:taskComplete event received:", payload);
+
+            const taskType = payload["type"];
+            if(taskType === "ext-ls-desec-dns_task_registerdomains") {
+                this.setState({ addButtonState: ""})
+            } else if (taskType === "ext-ls-desec-dns-task_syncdnszones") {
+                this.setState({ syncButtonState: ""})
+            }
         };
 
 

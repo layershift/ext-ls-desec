@@ -5,17 +5,36 @@ import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { revertAutoSyncStatus } from '../../utils/methods'
 
 export const handleAddDomainToDesec = async function () {
-    const { data } = await myAxios.post(
-        `${this.props.baseUrl}/api/register-domain`,
-        [...this.state.selectedDomains],
-    );
+    this.setState({addButtonState: "loading"})
+
+    try {
+        const { data } = await myAxios.post(
+            `${this.props.baseUrl}/api/register-domain`,
+            [...this.state.selectedDomains],
+        );
+
+    } catch(error) {
+        const key = Math.random().toString();
+        console.error(error);
+        this.setState(prevState => ({
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key,
+                    intent: 'danger',
+                    message: error.message
+                }
+            ]
+        }));
+    }
 };
 
 
 export const handleDNSRecordsSync = async function () {
-
+    this.setState({ syncButtonState: "loading"})
 
     try {
+
         const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/sync-dns-zone`,
             [...this.state.selectedDomains]
