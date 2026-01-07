@@ -137,6 +137,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         /** @var array<int> $ids */
         $ids = (array)$this->getParam('ids');
         $summary = [];
+        $additionalData = [];
         $count = count($ids);
         $i = 0;
 
@@ -164,7 +165,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
                 $result = $domainUtils->syncDomain($domainId);
                 $summary[$domainId] = $result;
-
+                $additionalData[$domainId] = ['status' => 'SUCCESS', 'timestamp' => $result['timestamp']];
 
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'SUCCESS');
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_ATTEMPT->value, $result['timestamp']);
@@ -179,6 +180,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                         'timestamp' => $timestamp,
                     ],
                 ];
+                $additionalData[$domainId] = ['status' => 'SUCCESS', 'timestamp' => $result['timestamp']];
 
                 // Persist domain settings for this failed domain
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, 'FAILED');
@@ -196,11 +198,12 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
             if ($this->trackProgress && $count > 0) {
                 $this->updateProgress((int)floor($i * 100 / $count));
             }
-
-            $this->setParam('summary', $summary);
         }
 
+        $this->setParam('summary', $summary);
         $this->setParam('output', $this->getOutputSummary());
+        $this->setParam('additionalData', $additionalData);
+
     }
     public function onStart()
     {

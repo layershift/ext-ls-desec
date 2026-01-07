@@ -112,7 +112,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
         $desecDomains = new Domains();
         $summary = [];
-        $successfulIds = [];
+        $additionalData = [];
 
         foreach ($ids as $domainId) {
             $i++;
@@ -128,7 +128,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
                 // Record success in summary
                 $summary[$domainId] = $result;
-                $successfulIds[] = (int)$domainId;
+                $additionalData[$domainId] = [ "status" => "Registered" ];
 
                 // Persist progress & summary
                 if ($this->trackProgress && $count > 0) {
@@ -137,29 +137,22 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
                 pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
                 $this->setParam('summary', $summary);
-                $this->setParam('successful_ids', $successfulIds);
 
             } catch (Exception $e) {
 
                 $summary[$domainId] = [
-                    'error' => [
-                        'message'   => $e->getMessage(),
-                        'domain'    => $domainName ?? null,
-                    ],
+                    "status" => "Not Registered"
                 ];
 
                 $this->setParam('summary', $summary);
-                $this->setParam('successful_ids', $successfulIds);
 
                 // Rethrow wrapped exception to fail the long task (fail-fast behavior)
                 throw new Exception($e->getMessage(), 0, $e);
             }
         }
 
-        // Final persistence of summary and clear current domainName
         $this->setParam('summary', $summary);
-        $this->setParam('domainName', null);
-        $this->setParam('successful_ids', $successfulIds);
+        $this->setParam('additionalData', $additionalData);
     }
 
     public function onDone()
@@ -176,24 +169,25 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
     {
         $myLogger = new MyLogger();
         $summary = (array)$this->getParam('summary');
-        $successfulIds = (array)$this->getParam('successful_ids');
+        $additionalData = (array)$this->getParam('additionalData');
+        $domainIds = array_keys($additionalData);
 
         $myLogger->log($level, $message . ' Summary: ' . json_encode($summary));
 
-        if (empty($successfulIds)) {
+        if (empty($additionalData)) {
             return;
         }
 
         try {
             $syncTask = new Modules_LsDesecDns_Task_SyncDnsZones();
-            $syncTask->setParam('ids', $successfulIds);
+            $syncTask->setParam('ids', $domainIds);
 
             $manager = new pm_LongTask_Manager();
             $manager->start($syncTask);
 
             $myLogger->log('debug', sprintf(
                 "Started SyncDnsZones task for registered domains: %s (task: %s)",
-                implode(', ', $successfulIds),
+                implode(', ', $domainIds),
                 $syncTask->getInstanceId()
             ));
         } catch (Exception $e) {

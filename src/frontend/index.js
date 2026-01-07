@@ -57,10 +57,49 @@ export default class App extends Component {
             console.log("plesk:taskComplete event received:", payload);
 
             const taskType = payload["type"];
-            if(taskType === "ext-ls-desec-dns_task_registerdomains") {
+            const additionalData = payload["additionalData"];
+
+            if(taskType === "ext-ls-desec-dns-task_registerdomains") {
                 this.setState({ addButtonState: ""})
+
+                if(additionalData) {
+                    this.setState(prevState => ({
+                        domains: prevState.domains.map(domain => {
+
+                            const taskResult = additionalData[domain["domain-id"]]
+                            if(taskResult) {
+                                return {
+                                    ...domain,
+                                    "desec-status": taskResult.status === "Registered" ? "Registered" : "Not Registered"
+                                };
+                            }
+
+                            return domain;
+                        })
+                    }));
+                }
+
             } else if (taskType === "ext-ls-desec-dns-task_syncdnszones") {
                 this.setState({ syncButtonState: ""})
+
+                if(additionalData) {
+                    this.setState(prevState => ({
+                        domains: prevState.domains.map(domain => {
+
+                            const taskResult = additionalData[domain["domain-id"]]
+                            if(taskResult) {
+                                return {
+                                    ...domain,
+                                    "last-sync-status": taskResult.status,
+                                    "last-sync-attempt": taskResult.timestamp,
+                                };
+                            }
+
+                            const
+                            return domain;
+                        })
+                    }));
+                }
             }
         };
 

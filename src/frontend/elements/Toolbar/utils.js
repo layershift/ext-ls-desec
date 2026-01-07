@@ -5,7 +5,7 @@ import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { revertAutoSyncStatus } from '../../utils/methods'
 
 export const handleAddDomainToDesec = async function () {
-    this.setState({addButtonState: "loading"})
+    this.setState({ addButtonState: "loading" })
 
     try {
         const { data } = await myAxios.post(
