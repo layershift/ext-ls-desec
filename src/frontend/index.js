@@ -70,7 +70,8 @@ export default class App extends Component {
                             if(taskResult) {
                                 return {
                                     ...domain,
-                                    "desec-status": taskResult.status === "Registered" ? "Registered" : "Not Registered"
+                                    "desec-status": taskResult.status === "Registered" ? "Registered" : "Not Registered",
+                                    "auto-sync-status": "true"
                                 };
                             }
 
@@ -91,11 +92,11 @@ export default class App extends Component {
                                 return {
                                     ...domain,
                                     "last-sync-status": taskResult.status,
-                                    "last-sync-attempt": taskResult.timestamp,
+                                    "last-sync-attempt": taskResult.timestamp
                                 };
                             }
 
-                            const
+
                             return domain;
                         })
                     }));
