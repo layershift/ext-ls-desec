@@ -4,8 +4,8 @@
     <name>deSEC DNS Sync</name>
     <description>This Plesk extension automatically syncs DNS zones to deSEC, enabling secure, nonprofit DNS hosting with DNSSEC support while managing domains directly from Plesk.</description>
     <category>dns</category>
-    <version>1.0.6</version>
-    <release>0</release>
+    <version>1.0.0</version>
+    <release>6</release>
     <vendor>Layershift</vendor>
     <url>https://www.layershift.com/</url>
     <support_url>https://github.com/layershift/ext-ls-desec</support_url>

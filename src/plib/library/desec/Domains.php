@@ -54,7 +54,7 @@ class Domains
 
     }
 
-    public function deleteDomain(string $domain) : array {
+    public function     deleteDomain(string $domain) : array {
         $res = $this->client->request('DELETE', 'domains/' . rawurlencode($domain) . "/");
 
         $this->myLogger->log("debug", "Domain {$domain} deleted!");

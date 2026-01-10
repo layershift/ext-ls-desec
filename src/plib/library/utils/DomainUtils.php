@@ -38,49 +38,59 @@ class DomainUtils
      */
     public function getPleskDomains($view): array
     {
-
         if (!($view instanceof \Zend_View)) {
             throw new \RuntimeException('Expected Zend_View in getPleskDomains()');
         }
-        $domainsData = array();
 
-        $domains = $this->desecDomains->getDesecDomains();
-        $domainNameSet = array_fill_keys(
-            array_column($domains['response'], 'name'),
-            true
-        );
+        $domainsData = [];
+
+        $desec = $this->desecDomains->getDesecDomains();
+        $domainNameSet = [];
+        foreach (($desec['response'] ?? []) as $d) {
+            if (!empty($d['name'])) {
+                $domainNameSet[$d['name']] = true;
+            }
+        }
+
+        $lastAttemptKey = Settings::LAST_SYNC_ATTEMPT->value;
+        $lastStatusKey  = Settings::LAST_SYNC_STATUS->value;
+        $deSecKey       = Settings::DESEC_STATUS->value;
+        $autoKey        = Settings::AUTO_SYNC_STATUS->value;
 
         foreach (pm_Domain::getAllDomains() as $pm_Domain) {
-//            $domainLink = "/smb/dns-zone/records-list/id/".$pm_Domain->getId()."/type/domain";
-            $domainLink = $view->domainOverviewUrl($pm_Domain);
+            $name = $pm_Domain->getName();
 
-            if (isset($domainNameSet[$pm_Domain->getName()])) {
-                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_REGISTERED->value);
-            } else {
-                $pm_Domain->setSetting(Settings::DESEC_STATUS->value, Status::STATUS_NOT_REGISTERED->value);
-            }
+            $desiredStatus = isset($domainNameSet[$name])
+                ? Status::STATUS_REGISTERED->value
+                : Status::STATUS_NOT_REGISTERED->value;
 
+            // Prefer: DO NOT persist in a listing method.
+            // If you must persist, only write when changed (see earlier snippet).
 
-            if($pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value) === "true" &&
-                $pm_Domain->getSetting(Settings::DESEC_STATUS->value) === Status::STATUS_NOT_REGISTERED->value) {
-                $pm_Domain->setSetting(Settings::AUTO_SYNC_STATUS->value, "false");
+            $autoSync = $pm_Domain->getSetting($autoKey, "false");
+            if ($autoSync === "true" && $desiredStatus === Status::STATUS_NOT_REGISTERED->value) {
+                // consider not persisting here either
+                $autoSync = "false";
             }
 
             $domainsData[] = [
                 'domain-id' => $pm_Domain->getId(),
                 'domain-name' => $pm_Domain->getDisplayName(),
-                'last-sync-attempt' => $pm_Domain->getSetting(Settings::LAST_SYNC_ATTEMPT->value, "No date"),
-                'last-sync-status' => $pm_Domain->getSetting(Settings::LAST_SYNC_STATUS->value, "No data"),
+                'last-sync-attempt' => $pm_Domain->getSetting($lastAttemptKey, "No date"),
+                'last-sync-status' => $pm_Domain->getSetting($lastStatusKey, "No data"),
+                // expensive: consider lazy-loading or cheaper API
                 'dns-status' => $pm_Domain->getDnsZone()->isEnabled(),
-                'desec-status' => $pm_Domain->getSetting(Settings::DESEC_STATUS->value, "Not Registered"),
-                'auto-sync-status' => $pm_Domain->getSetting(Settings::AUTO_SYNC_STATUS->value, "false"),
-                'domain-link' => $domainLink,
+                'desec-status' => $desiredStatus,
+                'auto-sync-status' => $autoSync,
+                // expensive: consider building link without heavy helper
+                'domain-link' => ''
             ];
         }
 
-        $this->myLogger->log("debug", "Data that was retrieved about the domains: " . PHP_EOL . print_r($domainsData, true));
+        $this->myLogger->log("debug", "Retrieved domains data count=" . count($domainsData));
         return $domainsData;
     }
+
 
     /*
     * This function returns all the DNS records of a domain
