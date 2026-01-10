@@ -221,12 +221,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
      */
     public function onError(Exception $e): void
     {
-        $summary = (array) $this->getParam('summary');
-        $this->setParam('summary', $summary);
 
-        // Log the outer exception
-        $myLogger = new MyLogger();
-        $myLogger->log('error', "Task '{$this->getId()}' failed: " . $e->getMessage() . " Summary: " . json_encode($summary, true) . PHP_EOL);
     }
 
 }

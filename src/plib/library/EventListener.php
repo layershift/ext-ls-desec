@@ -21,6 +21,9 @@ class Modules_LsDesecDns_EventListener implements EventListener
         ];
     }
 
+    /**
+     * @throws pm_Exception
+     */
     public function handleEvent($objectType, $objectId, $action, $oldValues, $newValues)
     {
         $logger = new MyLogger();
@@ -48,9 +51,12 @@ class Modules_LsDesecDns_EventListener implements EventListener
         };
     }
 
+    /**
+     * @throws pm_Exception
+     */
     private function handleDnsUpdate(int $domainId, array $oldValues, array $newValues, MyLogger $logger): void {
         $desec = new Domains();
-        $utils = new DomainUtils();
+        $manager = new pm_LongTask_Manager();
         $domain = pm_Domain::getByDomainId($domainId);
 
         $oldDomainName = $this->toAsciiDomain($oldValues['Domain Name'] ?? '');
@@ -70,20 +76,9 @@ class Modules_LsDesecDns_EventListener implements EventListener
                 return;
             }
 
-            try {
-                $summary = $utils->syncDomain($domainId);
-                $this->markSyncResult($domain, true);
-                $logger->log(
-                    "debug",
-                    "[ event-listener ] Synced {$oldDomainName} in deSEC: " . json_encode($summary, true)
-                );
-            } catch (Exception $e) {
-                $this->markSyncResult($domain, false);
-                $logger->log(
-                    "error",
-                    "[ event-listener ] Sync error for {$oldDomainName}: " . $e->getMessage()
-                );
-            }
+            $syncDomainTask = new Modules_LsDesecDns_Task_SyncDnsZones();
+            $syncDomainTask->setParam('ids', $domainId);
+            $manager->start($syncDomainTask);
 
             return;
         }
@@ -94,25 +89,19 @@ class Modules_LsDesecDns_EventListener implements EventListener
             "[ event-listener ] Domain renamed {$oldDomainName} => {$newDomainName} (ID={$domainId})"
         );
 
-        try {
-            $desec->addDomain($newDomainName);
-            $utils->syncDomain($domainId);
+        $desec->addDomain($newDomainName);
 
-            $retentionEnabled =
-                pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "true";
+        $syncDomainTask = new Modules_LsDesecDns_Task_SyncDnsZones();
+        $syncDomainTask->setParam('ids', $domainId);
+        $manager->start($syncDomainTask);
 
-            if (!$retentionEnabled && $desec->getDomain($oldDomainName)) {
-                $desec->deleteDomain($oldDomainName);
-            }
+        $retentionEnabled =
+            pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "true";
 
-            $this->markSyncResult($domain, true);
-        } catch (Exception $e) {
-            $this->markSyncResult($domain, false);
-            $logger->log(
-                "error",
-                "[ event-listener ] Rename/sync error for {$oldDomainName}: " . $e->getMessage()
-            );
+        if (!$retentionEnabled && $desec->getDomain($oldDomainName)) {
+            $desec->deleteDomain($oldDomainName);
         }
+
     }
 
     private function handleDomainDelete(array $oldValues, MyLogger $logger): void
@@ -125,7 +114,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
             return;
         }
 
-        $logger->log("debug", "[ event-listener ] Domain {$domainName} deleted");
+        $logger->log("debug", "[ event-listener ] Domain {$domainName} deleted from Plesk Dashboard!");
 
         $retentionEnabled =
             pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "true";
@@ -148,19 +137,6 @@ class Modules_LsDesecDns_EventListener implements EventListener
         }
     }
 
-
-    private function markSyncResult(pm_Domain $domain, bool $success): void
-    {
-        $domain->setSetting(
-            Settings::LAST_SYNC_STATUS->value,
-            $success ? 'SUCCESS(auto-sync)' : 'FAILED(auto-sync)'
-        );
-
-        $domain->setSetting(
-            Settings::LAST_SYNC_ATTEMPT->value,
-            new DateTime()->format('Y-m-d H:i:s T')
-        );
-    }
 
     private function toAsciiDomain(string $domain): string
     {
