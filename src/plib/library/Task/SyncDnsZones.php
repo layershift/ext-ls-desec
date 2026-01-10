@@ -191,7 +191,7 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 $myLogger->log('error', "Error syncing $domainId: " . $e->getMessage());
 
                 // Rethrow
-                throw new Exception($e->getMessage(), 0, $e);
+                throw new Exception($e->getMessage(), 127, $e);
             }
 
             $i++;
