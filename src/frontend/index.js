@@ -54,7 +54,6 @@ export default class App extends Component {
 
         const observer = window.Jsw.Observer;
         this._onPleskTaskComplete = (payload) => {
-            console.log("plesk:taskComplete event received:", payload);
 
             const taskType = payload["type"];
             const additionalData = payload["additionalData"];

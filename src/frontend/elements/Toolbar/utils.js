@@ -24,7 +24,9 @@ export const handleAddDomainToDesec = async function () {
                     intent: 'danger',
                     message: error.message
                 }
-            ]
+            ],
+            addButtonState: ""
+
         }));
     }
 };
@@ -51,7 +53,8 @@ export const handleDNSRecordsSync = async function () {
                     intent: 'danger',
                     message: error.message
                 }
-            ]
+            ],
+            syncButtonState: ""
         }));
     }
 };
