@@ -29,6 +29,10 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         $summary = (array) $this->getParam('summary');
         $domainName = $this->getParam('domainName');
 
+        if(!$this->getParam('domainName')) {
+            return 'Queued - waiting for another sync to finish...';
+        }
+
         return match ($status) {
             static::STATUS_RUNNING => 'Registering domain name....' . $domainName,
             static::STATUS_DONE => $this->formatDoneMessage($summary),
@@ -106,12 +110,6 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         $manager = new pm_LongTask_Manager();
         $tasks = $manager->getTasks([$this->getId()]);
         $currentTaskId = $this->getInstanceId();
-
-        foreach($tasks as $task) {
-            if($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
-                throw new Exception("DNS Sync already running!");
-            }
-        }
 
         $myLogger = new MyLogger();
         $ids = (array)$this->getParam('ids');

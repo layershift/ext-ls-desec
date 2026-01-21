@@ -26,8 +26,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $summary = (array) $this->getParam('summary');
         $domainName = $this->getParam('domainName');
 
-        $myLogger = new MyLogger();
-
         if(!$this->getParam('domainName')) {
             return 'Queued - waiting for another sync to finish...';
         }
