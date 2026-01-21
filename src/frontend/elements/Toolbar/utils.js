@@ -5,7 +5,8 @@ import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { revertAutoSyncStatus } from '../../utils/methods'
 
 export const handleAddDomainToDesec = async function () {
-    this.setState({ addButtonState: "loading" })
+
+    this.setState({ addButtonState: "loading"})
 
     try {
         const { data } = await myAxios.post(
@@ -25,7 +26,6 @@ export const handleAddDomainToDesec = async function () {
                     message: error.message
                 }
             ],
-            addButtonState: ""
 
         }));
     }
@@ -33,8 +33,8 @@ export const handleAddDomainToDesec = async function () {
 
 
 export const handleDNSRecordsSync = async function () {
-    // this.setState({ syncButtonState: "loading"})
 
+    this.setState({ syncButtonState: "loading"})
     try {
 
         const { data } = await myAxios.post(
@@ -54,7 +54,6 @@ export const handleDNSRecordsSync = async function () {
                     message: error.message
                 }
             ],
-            syncButtonState: ""
         }));
     }
 };

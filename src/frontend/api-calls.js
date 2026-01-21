@@ -27,6 +27,7 @@ export const getDomainsInfo = async function () {
                     message: `Successfully fetched ${domainsArray.length} domain(s).`
                 }
             ],
+
             listLoading: false
         }));
 
@@ -43,6 +44,8 @@ export const getDomainsInfo = async function () {
                     message: `${errorMessage}`
                 }
             ],
+            emptyViewTitle: "Something went wrong!",
+            emptyViewDescription: "An error occurred while fetching domains information.",
             listLoading: false
 
         }));

@@ -29,6 +29,11 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         $summary = (array) $this->getParam('summary');
         $domainName = $this->getParam('domainName');
 
+        # This check was added in order to see if the task is truly "running" or it was just added to the queue.
+        # If it's truly running (meaning that it started to sync the DNS records), the domainName parameter will have retained
+        # the name of the domain that is actually synced. If the task is not running (meaning that the sync didn't start)
+        # the domainName parameter will be null, and the appropriate message will be shown to the user
+
         if(!$this->getParam('domainName')) {
             return 'Queued - waiting for another sync to finish...';
         }
