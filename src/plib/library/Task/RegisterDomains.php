@@ -16,6 +16,13 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         return 'task_registerdomains';
     }
 
+    public function getConcurrencyRules(): array
+    {
+        return [
+            'long_task/task_registerdomains',
+        ];
+    }
+
     public function statusMessage(): string
     {
         $status = $this->getStatus();

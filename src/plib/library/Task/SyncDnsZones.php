@@ -9,16 +9,15 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     public $trackProgress = true;
     public $hidden = false;
 
-    public $poolSize = 1; # Number of concurrent tasks
-
     public function getId() {
         return 'task_syncdnszones';
     }
 
     public function getConcurrencyRules(): array
     {
-        return ['long_task/task_syncdnszones/0'];
-
+        return [
+            'long_task/task_syncdnszones',
+        ];
     }
 
     public function statusMessage(): string
@@ -27,7 +26,14 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $summary = (array) $this->getParam('summary');
         $domainName = $this->getParam('domainName');
 
+        $myLogger = new MyLogger();
+
+        if(!$this->getParam('domainName')) {
+            return 'Queued - waiting for another sync to finish...';
+        }
+
         return match ($status) {
+            static::STATUS_NOT_STARTED => "Starting syncing task. Stand by...",
             static::STATUS_RUNNING => 'Syncing DNS zone of ' . $domainName . '...' . PHP_EOL,
             static::STATUS_DONE => $this->formatDoneMessage($summary),
             static::STATUS_ERROR => $this->formatErrorMessage($summary),
@@ -159,6 +165,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
         foreach ($ids as $domainId) {
             try {
+                $this->setParam('id', $domainId);
                 $this->setParam('domainName', pm_Domain::getByDomainId($domainId)->getName());
 
                 $result = $domainUtils->syncDomain($domainId);
@@ -207,6 +214,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
     }
     public function onStart()
     {
+        $this->setParam('started', true);
 
     }
 
