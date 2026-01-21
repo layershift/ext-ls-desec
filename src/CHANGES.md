@@ -1,3 +1,14 @@
+## 1.0.0-6 (January 2026):
+
+---
+
+### Improvements:
+- Before initiating a Long Task, an additional check was implemented to prevent duplicate task execution and avoid polluting the task pool.
+- Automatic of DNS records is now possible for subdomains and additional domains in Plesk subscriptions
+- Synchronization status updates were automatic until the introduction of Plesk's Long Tasks. We now relay task status to the React frontend by listening for the plesk:taskComplete event.
+
+
+
 ## 1.0.0-5 (November 2025):
 
 ---

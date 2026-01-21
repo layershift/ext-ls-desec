@@ -33,7 +33,7 @@ export const handleAddDomainToDesec = async function () {
 
 
 export const handleDNSRecordsSync = async function () {
-    this.setState({ syncButtonState: "loading"})
+    // this.setState({ syncButtonState: "loading"})
 
     try {
 

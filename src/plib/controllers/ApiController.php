@@ -166,20 +166,7 @@ class ApiController extends pm_Controller_Action
             $manager = new pm_LongTask_Manager();
 
             $tasks = $manager->getTasks([$addDomainTask->getId()]);
-
-            foreach($tasks as $task) {
-                $this->myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
-
-                if($task->getStatus() === "running") {
-                    $this->_helper->json([
-                        'error' => [
-                            'message' => 'DNS sync already running.'
-                        ],
-                    ]);
-
-                    return;
-                }
-            }
+            $this->myLogger->log('info', 'Concurrency rules: ' . json_encode($addDomainTask->getConcurrencyRules()));
 
             $manager->start($addDomainTask);
             $uid = $addDomainTask->getInstanceId();
@@ -221,6 +208,8 @@ class ApiController extends pm_Controller_Action
         $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
         $this->myLogger->log('debug', 'Task count:' . count($manager->getTasks([$syncDomainTask->getId()])));
         $this->myLogger->log('debug', "Params: " . json_encode($syncDomainTask->getParams() ) . PHP_EOL);
+        $this->myLogger->log('info', 'Concurrency rules: ' . json_encode($syncDomainTask->getConcurrencyRules()));
+
         $manager->start($syncDomainTask);
 
         $uid = $syncDomainTask->getInstanceId();

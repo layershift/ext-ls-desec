@@ -9,6 +9,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 {
     public $trackProgress = true;
     public $hidden = false;
+    public $poolSize = 1; # Number of concurrent tasks
 
     public function getId()
     {

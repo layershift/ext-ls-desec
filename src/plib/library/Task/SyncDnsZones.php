@@ -4,14 +4,21 @@ use PleskExt\Utils\Settings;
 use PleskExt\Utils\DomainUtils;
 use PleskExt\Utils\MyLogger;
 
-class
-Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
+class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 {
     public $trackProgress = true;
     public $hidden = false;
 
+    public $poolSize = 1; # Number of concurrent tasks
+
     public function getId() {
         return 'task_syncdnszones';
+    }
+
+    public function getConcurrencyRules(): array
+    {
+        return ['long_task/task_syncdnszones/0'];
+
     }
 
     public function statusMessage(): string
@@ -149,14 +156,6 @@ Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $currentTaskId = $this->getInstanceId();
 
         $myLogger->log('debug', 'Current task id: ' . $currentTaskId);
-
-        foreach ($tasks as $task) {
-            $myLogger->log('info', 'Task uid: ' . $task->getInstanceId() . " status: " . $task->getStatus());
-
-            if ($task->getStatus() === "running" && $task !== $this && $task->getInstanceId() !== $currentTaskId) {
-                throw new Exception("DNS Sync already running!");
-            }
-        }
 
         foreach ($ids as $domainId) {
             try {
