@@ -1,0 +1,32 @@
+{
+  "name": "layershift/ls-desec-dns",
+  "type": "project",
+  "config": {
+    "vendor-dir": "src/plib/vendor"
+  },
+  "autoload": {
+    "psr-4": {
+      "PleskExt\\Desec\\": "modules/ls-desec-dns/library/desec/",
+      "PleskExt\\Desec\\Utils\\": "modules/ls-desec-dns/library/desec/utils",
+      "PleskExt\\Utils\\": "modules/ls-desec-dns/library/utils/",
+      "PleskExt\\Utils\\Validation\\": "modules/ls-desec-dns/library/utils/validation"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PleskExt\\Desec\\": "src/plib/library/desec/",
+      "PleskExt\\Desec\\Utils\\": "src/plib/library/desec/utils",
+      "PleskExt\\Utils\\": "src/plib/library/utils/",
+      "PleskExt\\Utils\\Validation\\": "src/plib/library/utils/validation"
+    }
+  },
+
+  "require": {
+    "ext-curl": "*",
+    "ext-ctype": "*",
+    "ext-intl": "*"
+  },
+  "require-dev": {
+    "plesk/pm-api-stubs": "^18.0"
+  }
+}

@@ -1,0 +1,25 @@
+import axios from 'axios';
+
+const myAxios = axios.create();
+
+myAxios.interceptors.response.use(
+    response => {
+        if (response.data && response.data.error) {
+
+            const enrichedError = new Error();
+            enrichedError.message = response.data.error.message;
+            enrichedError.results = response.data.error.results;
+            enrichedError.domainId = response.data.error?.domainId || "";
+            enrichedError.timestamp = response.data.error?.timestamp || "";
+            enrichedError.failed_domain = response.data.error?.failed_domain || "";
+            throw enrichedError;
+        }
+
+        return response;
+    },
+    error => {
+        return Promise.reject(error);
+    }
+);
+
+export default myAxios;
