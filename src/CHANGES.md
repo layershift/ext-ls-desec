@@ -7,6 +7,9 @@
 - Automatic of DNS records is now possible for subdomains and additional domains in Plesk subscriptions
 - Synchronization status updates were automatic until the introduction of Plesk's Long Tasks. We now relay task status to the React frontend by listening for the plesk:taskComplete event.
 
+### Bug Fixes:
+
+* Correctly processing the deregistration of a domain when the domain was deleted from the deSEC dashboard, while the extension page is still open(and more accurate data wasn't fetched)
 
 
 ## 1.0.0-5 (November 2025):
