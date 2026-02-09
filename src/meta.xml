@@ -8,7 +8,8 @@
     <release>6</release>
     <vendor>Layershift</vendor>
     <url>https://www.layershift.com/</url>
-    <support_url>https://github.com/layershift/ext-ls-desec</support_url>
+    <support_url>https://github.com/layershift/ext-ls-desec/issues</support_url>
+    <privacy_policy_url>https://github.com/layershift/ext-ls-desec/blob/main/PRIVACY.md</privacy_policy_url>
     <plesk_min_version>18.0.71</plesk_min_version>
 
 </module>
