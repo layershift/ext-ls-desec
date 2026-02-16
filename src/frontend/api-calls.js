@@ -34,11 +34,11 @@ export const saveUserEulaDecision = async function(decision) {
     const key = Math.random().toString();
 
     try {
-        const {data} = await myAxios.post(
+        const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/save-user-eula-decision`,
             [decision]
         );
-        console.log(decision)
+        console.log(data)
         this.setState({ eulaDecision: decision })
 
     } catch (error) {

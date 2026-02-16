@@ -133,13 +133,14 @@ class ApiController extends pm_Controller_Action
                 pm_Settings::set(Settings::EULA_DECISION->value, $status);
                 $this->myLogger->log("info", "Successfully saved the user's eula decision! Current Status: " . $status);
 
+                $this->_helper->json(['success' => true]);
             }
 
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to save user's EULA decision retention setting. Error: " . $e->getMessage());
 
             $failureResponse = [ "error" =>
-                [ "message" =>  "Failed to save domain retention setting. Error: " . $e->getMessage() ]
+                [ "message" =>  "Failed to save the user's eula decision. Error: " . $e->getMessage() ]
             ];
 
             $this->_helper->json($failureResponse);
