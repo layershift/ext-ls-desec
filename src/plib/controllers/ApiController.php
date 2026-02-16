@@ -110,7 +110,7 @@ class ApiController extends pm_Controller_Action
             if($this->getRequest()->isGet()) {
                 $userEULADecision = pm_Settings::get(Settings::EULA_DECISION->value, "false");
                 $this->myLogger->log("info", "Successfully retrieved the user's EULA decision! Current Status: " . $userEULADecision);
-                $this->_helper->json(['user-eula' => $userEULADecision]);
+                $this->_helper->json(['eula-decision' => $userEULADecision]);
             }
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());

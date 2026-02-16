@@ -51,7 +51,7 @@ export default class App extends Component {
         await getUserEulaDecision.call(this);
         await checkTokenExists.call(this);
 
-        if (this.state.eulaDecision !== true) {
+        if (!this.state.eulaDecision) {
             this.setState({
                 listLoading: true,
                 privacyPolicyDialog: true,
@@ -59,7 +59,7 @@ export default class App extends Component {
             return;
         }
 
-        if (this.state.tokenStatus !== "true") {
+        if (!this.state.tokenStatus) {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
                 emptyViewDescription:
