@@ -309,7 +309,7 @@ export default class App extends Component {
                                 eulaDecision: false,
                                 emptyViewTitle: "Privacy policy denied!",
                                 emptyViewDescription:
-                                    "Without the privacy policy accepted, the extension can not be used!",
+                                    "Acceptance of the Privacy Policy is required to use this extension. To revisit the policy, please refresh the page.",
                                 listLoading: false,
                                 privacyPolicyDialog: false,
                             });
