@@ -25,12 +25,14 @@ export const states= {
     sortingBy: 'domain-name',
     sortingDirection: 'ASC',
     syncResponse: [],
-    tokenStatus: "true",
+    tokenStatus: true,
     formState: "",
     isFormOpen: true,
-    emptyViewDescription: "The domain(s) that you are looking for doesn't/don't exist or there aren't any domains hosted on this Plesk instance.", // TODO ask Damien 2morrow
+    emptyViewDescription: "The domain(s) that you are looking for doesn't/don't exist or there aren't any domains hosted on this Plesk instance.",
     emptyViewTitle: "No domains!",
     inputToken: "",
-    refreshToggle: true
+    refreshToggle: true,
+    eulaDecision: false,
+    privacyPolicyDialog: false
 };
 

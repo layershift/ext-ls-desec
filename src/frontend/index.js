@@ -3,7 +3,7 @@ import punycode from 'punycode/';
 import { propTypes } from './utils/constants';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { handleSortByChange, handleSortDirectionChange } from "./elements/SortingMenu/utils";
-import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, checkTokenExists, validateToken} from './api-calls';
+import { getDomainsInfo, getDomainRetentionStatus, saveDomainRetentionStatus, checkTokenExists, validateToken, getUserEulaDecision, saveUserEulaDecision} from './api-calls';
 import DomainListToolbar from "elements/Toolbar/Toolbar";
 import { states } from './utils/states';
 import { handleAddDomainToDesec, handleDNSRecordsSync, handleSearchChange } from './elements/Toolbar/utils';
@@ -26,30 +26,51 @@ import {
     Text,
     Drawer,
     Section,
-    FormFieldText
+    FormFieldText,
+    Dialog
 } from '@plesk/ui-library';
 
 export default class App extends Component {
 
     static propTypes = propTypes;
-
     state = states;
 
+    loadDomains = async() => {
+        const hasToken = this.state.tokenStatus;
+        const acceptedEula = this.state.eulaDecision
+
+        if(hasToken && acceptedEula) {
+            this.setState({ listLoading: true });
+            await getDomainsInfo.call(this);
+            this.setState({ listLoading: false });
+        }
+    }
+
+
     componentDidMount = async () => {
+        await getUserEulaDecision.call(this);
         await checkTokenExists.call(this);
 
-        if (this.state.tokenStatus === "true") {
-            await getDomainsInfo.call(this);
-        } else {
+        if (this.state.eulaDecision !== true) {
+            this.setState({
+                listLoading: true,
+                privacyPolicyDialog: true,
+            });
+            return;
+        }
+
+        if (this.state.tokenStatus !== "true") {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
                 emptyViewDescription:
                     "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
                 isFormOpen: true,
-                listLoading: false
+                listLoading: false,
             });
+            return;
         }
 
+        await this.loadDomains();
         await getDomainRetentionStatus.call(this);
 
         const observer = window.Jsw.Observer;
@@ -152,9 +173,6 @@ export default class App extends Component {
 
         return sorted;
     }
-
-
-
 
 
     renderColumns(allSelected, isIndeterminate, selectedDomains) {
@@ -264,6 +282,8 @@ export default class App extends Component {
             isFormOpen,
             emptyViewTitle,
             emptyViewDescription,
+            eulaDecision,
+            privacyPolicyDialog
         } = this.state;
 
         const filtered = domains.filter(d => d['domain-name']?.toLowerCase().includes(searchQuery.trim().toLowerCase()));
@@ -277,7 +297,58 @@ export default class App extends Component {
 
         return (
             <div>
-                {tokenStatus === "false" && (
+                {(eulaDecision !== true) ? (
+                    <Dialog
+                        isOpen={!!privacyPolicyDialog}
+                        title="Privacy Policy & Data Processing"
+                        size="sm"
+                        onClose={async () => {
+                            await saveUserEulaDecision.call(this, false);
+
+                            this.setState({
+                                eulaDecision: false,
+                                emptyViewTitle: "Privacy policy denied!",
+                                emptyViewDescription:
+                                    "Without the privacy policy accepted, the extension can not be used!",
+                                listLoading: false,
+                                privacyPolicyDialog: false,
+                            });
+                        }}
+                        form={{
+                            onSubmit: async () => {
+                                await saveUserEulaDecision.call(this, true);
+
+                                this.setState(
+                                    {
+                                        eulaDecision: true,
+                                        privacyPolicyDialog: false,
+                                    },
+                                    async () => {
+                                        await this.loadDomains();
+                                    }
+                                );
+                            },
+                            submitButton: { children: "Agree!" },
+                            cancelButton: { children: "I do not agree!" }
+                        }}
+                    >
+                        <Section title="Read the full policy">
+                            <Paragraph>
+                                <Link href="https://github.com/layershift/ext-ls-desec/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">
+                                    Open Privacy Policy
+                                </Link>
+                            </Paragraph>
+                        </Section>
+
+                        <Paragraph>
+                            If you do not agree, you will not be able to perform any operations using this extension.
+                        </Paragraph>
+
+                    </Dialog>
+                ) : null}
+
+
+                {tokenStatus === null || tokenStatus === undefined || tokenStatus === false && (
                     <Drawer
                         title="deSEC Credentials"
                         size="md"

@@ -3,6 +3,59 @@ import React from 'react';
 import { states } from './utils/states';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 
+export const getUserEulaDecision = async function() {
+    const key = Math.random().toString();
+
+    try {
+        const {data} = await myAxios.get(
+            `${this.props.baseUrl}/api/get-user-eula-decision`
+        );
+
+        this.setState({
+            eulaDecision: data["eula-decision"] === "true"
+        });
+    } catch (error) {
+        const errorMessage = error?.message
+
+        this.setState(prevState => ({
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key,
+                    intent: 'danger',
+                    message: `${errorMessage}`
+                }
+            ],
+        }));
+    }
+}
+
+export const saveUserEulaDecision = async function(decision) {
+    const key = Math.random().toString();
+
+    try {
+        const {data} = await myAxios.post(
+            `${this.props.baseUrl}/api/save-user-eula-decision`,
+            [decision]
+        );
+        console.log(decision)
+        this.setState({ eulaDecision: decision })
+
+    } catch (error) {
+        const errorMessage = error?.message
+        console.error(error.message)
+        this.setState(prevState => ({
+            toasts: [
+                ...prevState.toasts,
+                {
+                    key,
+                    intent: 'danger',
+                    message: `${errorMessage}`
+                }
+            ],
+        }));
+    }
+}
 export const getDomainsInfo = async function () {
     const key = Math.random().toString();
 
@@ -137,7 +190,7 @@ export const checkTokenExists = async function () {
 
 
         this.setState({
-            tokenStatus: data["token"]
+            tokenStatus: data["token"] === "true"
         });
 
     } catch(error) {

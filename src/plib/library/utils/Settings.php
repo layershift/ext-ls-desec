@@ -11,4 +11,5 @@ enum Settings: string
     case AUTO_SYNC_STATUS = "auto-sync-status";
     case DESEC_TOKEN = "desec_token";
     case DOMAIN_RETENTION = "domain_retention";
+    case EULA_DECISION = "eula-decision";
 }

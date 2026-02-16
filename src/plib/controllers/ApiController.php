@@ -23,10 +23,6 @@ class ApiController extends pm_Controller_Action
      */
     protected $_accessLevel = 'admin';
     public function init() {
-        // Hard block before anything else runs
-        if (!pm_Session::getClient() || !pm_Session::getClient()->isAdmin()) {
-            exit;
-        }
 
         parent::init();
 
@@ -63,7 +59,6 @@ class ApiController extends pm_Controller_Action
 
     public function saveDomainRetentionStatusAction(): void
     {
-
         try {
             if ($this->getRequest()->isPost()) {
 
@@ -72,6 +67,8 @@ class ApiController extends pm_Controller_Action
 
                 pm_Settings::set(Settings::DOMAIN_RETENTION->value, $status);
                 $this->myLogger->log("info", "Successfully saved the domain retention status! Current Status: " . $status);
+
+                $this->_helper->json(['success' => true]);
 
             }
         } catch (Exception $e) {
@@ -83,8 +80,6 @@ class ApiController extends pm_Controller_Action
 
             $this->_helper->json($failureResponse);
         }
-
-        $this->_helper->json(['success' => true]);
     }
 
 
@@ -94,17 +89,61 @@ class ApiController extends pm_Controller_Action
             if ($this->getRequest()->isGet()) {
 
                 $domainRetentionStatus = pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false");
-                $this->_helper->json(['success' => true, 'domain-retention' => $domainRetentionStatus]);
                 $this->myLogger->log("info", "Successfully retrieved the domain retention status! Current Status: " . $domainRetentionStatus);
+                $this->_helper->json(['domain-retention' => $domainRetentionStatus]);
             }
 
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());
 
-            $this->_helper->json([
-                'success' => false,
-                'error'   => 'Failed to retrieve domain retention setting.'
-            ]);
+            $failureResponse = [ "error" =>
+                [ "message" =>  "Failed to save retrieve domain retention setting. Error: " . $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
+        }
+    }
+
+    // ################ Privacy Policy and EULA Methods ##############
+    public function getUserEulaDecisionAction(): void {
+        try {
+            if($this->getRequest()->isGet()) {
+                $userEULADecision = pm_Settings::get(Settings::EULA_DECISION->value, "false");
+                $this->myLogger->log("info", "Successfully retrieved the user's EULA decision! Current Status: " . $userEULADecision);
+                $this->_helper->json(['user-eula' => $userEULADecision]);
+            }
+        } catch (Exception $e) {
+            $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());
+
+            $failureResponse = [ "error" =>
+                [ "message" =>  "Failed to save retrieve user's EULA decision. Error: " . $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
+        }
+    }
+
+    public function saveUserEulaDecisionAction(): void {
+
+        try {
+            if($this->getRequest()->isPost()) {
+                $data = InputSanitizer::readJsonBody();
+                $status = InputSanitizer::normalizeBool($data[0]);
+
+                pm_Settings::set(Settings::EULA_DECISION->value, $status);
+                $this->myLogger->log("info", "Successfully saved the user's eula decision! Current Status: " . $status);
+
+            }
+
+        } catch (Exception $e) {
+            $this->myLogger->log("error", "Failed to save user's EULA decision retention setting. Error: " . $e->getMessage());
+
+            $failureResponse = [ "error" =>
+                [ "message" =>  "Failed to save domain retention setting. Error: " . $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
+
         }
     }
 
@@ -186,6 +225,7 @@ class ApiController extends pm_Controller_Action
      */
     public function syncDnsZoneAction()
     {
+
         if (!$this->getRequest()->isPost()) {
             throw new Exception('POST required');
         }
@@ -223,6 +263,8 @@ class ApiController extends pm_Controller_Action
 
     public function retrieveTokenAction(): void
     {
+
+
         if ($this->getRequest()->isGet()) {
             try {
                 if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
@@ -248,6 +290,7 @@ class ApiController extends pm_Controller_Action
     }
 
     public function validateTokenAction() {
+
         if ($this->getRequest()->isPost()) {
             try {
                 $payload = InputSanitizer::readJsonBody();
