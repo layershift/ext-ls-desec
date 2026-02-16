@@ -15,7 +15,6 @@ export const getUserEulaDecision = async function() {
         this.setState({
             eulaDecision: data["eula-decision"] === "true"
         });
-        console.log("EULA decision: ", data)
 
         return data["eula-decision"] === "true"
 
@@ -142,7 +141,6 @@ export const saveDomainRetentionStatus = async function () {
         }
 
     } catch (error) {
-        console.error(error);
 
         this.setState(prevState => ({
             retainDomainCheck: prevValue,
@@ -198,7 +196,6 @@ export const checkTokenExists = async function () {
             tokenStatus: data["token"] === "true"
         });
 
-        console.log("token: ", this.state.tokenStatus)
 
         return data["token"] === "true"
 
@@ -226,6 +223,8 @@ export const checkTokenExists = async function () {
 }
 
 export const validateToken = async function () {
+
+
     try {
         const { data } = await myAxios.post(
             `${this.props.baseUrl}/api/validate-token`,
@@ -267,7 +266,6 @@ export const validateToken = async function () {
 
 
     } catch(error) {
-        console.error(error)
         this.setState(prevState => ({
             toasts: [
                 ...prevState.toasts,
