@@ -11,8 +11,6 @@ export const getUserEulaDecision = async function() {
             `${this.props.baseUrl}/api/get-user-eula-decision`
         );
 
-        console.log("GET:", data)
-
         this.setState({
             eulaDecision: data["eula-decision"] === "true"
         });
