@@ -43,7 +43,6 @@ export default class App extends Component {
         this.setState({
             eulaDecision,
             tokenStatus,
-            listLoading: false,
         });
 
         if (tokenStatus && eulaDecision) {
@@ -291,7 +290,7 @@ export default class App extends Component {
 
                         onClose={async () => {
                             await saveUserEulaDecision.call(this, false);
-                            
+
                             this.setState({
                                 eulaDecision: false,
                                 emptyViewTitle: "Privacy policy & deSEC token pop-up dialog was closed!",
@@ -304,21 +303,27 @@ export default class App extends Component {
 
                         form={{
                             onSubmit: async () => {
-
+                                let ok = null
                                 if(needsEula) {
                                     await saveUserEulaDecision.call(this, true);
                                     this.setState({
                                         eulaDecision: true,
                                     });
-                                    await getDomainsInfo.call(this);
                                 }
 
                                 if(needsToken) {
-                                    await validateToken.call(this);
-                                    this.setState({
-                                        eulaDecision: true,
-                                    });
+                                    ok = await validateToken.call(this);
+
                                 }
+
+                                if (ok) {
+                                    this.setState({
+                                        tokenStatus: true,
+                                        listLoading: false
+                                    });
+                                    await getDomainsInfo.call(this);
+                                }
+
 
                             },
                             submitButton: { children: "Agree!" },
@@ -360,7 +365,7 @@ export default class App extends Component {
                 <Tabs active={1} monospaced>
                     <Tab key={1} title="Control Panel" icon="cd-up-in-cloud">
                         {listLoading ? (
-                            <SkeletonText lines={5} />
+                            <SkeletonText lines={10} />
                         ) : (
                             <>
                                 <DomainListToolbar

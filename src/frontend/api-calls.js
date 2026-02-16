@@ -243,12 +243,12 @@ export const validateToken = async function () {
                     }
                 ],
 
-                formState: undefined,
-                isFormOpen: false,
-                tokenStatus: "true",
+                tokenStatus: true,
                 }
             ));
             await getDomainsInfo.call(this);
+
+            return true
         } else {
             this.setState(prevState => ({
                 toasts: [
@@ -259,9 +259,10 @@ export const validateToken = async function () {
                         message: `Invalid deSEC API token. Please insert a valid one!`
                     }
                 ],
-                formState: undefined,
                 })
             );
+
+            return false
         }
 
 
@@ -276,7 +277,6 @@ export const validateToken = async function () {
                     message: `${error.message}`
                 }
             ],
-            formState: undefined,
             })
         );
     }
