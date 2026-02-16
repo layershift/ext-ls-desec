@@ -32,7 +32,7 @@ export const states= {
     emptyViewTitle: "No domains!",
     inputToken: "",
     refreshToggle: true,
-    eulaDecision: false,
+    eulaDecision: true,
     privacyPolicyDialog: false
 };
 

@@ -11,9 +11,14 @@ export const getUserEulaDecision = async function() {
             `${this.props.baseUrl}/api/get-user-eula-decision`
         );
 
+
         this.setState({
             eulaDecision: data["eula-decision"] === "true"
         });
+        console.log("EULA decision: ", data)
+
+        return data["eula-decision"] === "true"
+
     } catch (error) {
         const errorMessage = error?.message
 
@@ -38,12 +43,13 @@ export const saveUserEulaDecision = async function(decision) {
             `${this.props.baseUrl}/api/save-user-eula-decision`,
             [decision]
         );
-        console.log(data)
+
         this.setState({ eulaDecision: decision })
+
 
     } catch (error) {
         const errorMessage = error?.message
-        console.error(error.message)
+
         this.setState(prevState => ({
             toasts: [
                 ...prevState.toasts,
@@ -188,10 +194,22 @@ export const checkTokenExists = async function () {
             `${this.props.baseUrl}/api/retrieve-token`,
         );
 
-
         this.setState({
             tokenStatus: data["token"] === "true"
         });
+
+        console.log("token: ", this.state.tokenStatus)
+
+        return data["token"] === "true"
+
+        if(!this.state.tokenStatus) {
+            this.setState({
+                emptyViewTitle: "Missing credentials!",
+                emptyViewDescription:
+                    "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
+                isFormOpen: true,
+            });
+        }
 
     } catch(error) {
         this.setState(prevState => ({

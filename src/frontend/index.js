@@ -1,3 +1,4 @@
+
 import React from 'react';
 import punycode from 'punycode/';
 import { propTypes } from './utils/constants';
@@ -24,7 +25,6 @@ import {
     ListEmptyView,
     Checkbox,
     Text,
-    Drawer,
     Section,
     FormFieldText,
     Dialog
@@ -35,43 +35,24 @@ export default class App extends Component {
     static propTypes = propTypes;
     state = states;
 
-    loadDomains = async() => {
-        const hasToken = this.state.tokenStatus;
-        const acceptedEula = this.state.eulaDecision
-
-        if(hasToken && acceptedEula) {
-            this.setState({ listLoading: true });
-            await getDomainsInfo.call(this);
-            this.setState({ listLoading: false });
-        }
-    }
-
-
     componentDidMount = async () => {
-        await getUserEulaDecision.call(this);
-        await checkTokenExists.call(this);
 
-        if (!this.state.eulaDecision) {
-            this.setState({
-                listLoading: true,
-                privacyPolicyDialog: true,
-            });
-            return;
+        const eulaDecision = await getUserEulaDecision.call(this);
+        const tokenStatus   = await checkTokenExists.call(this);
+
+        this.setState({
+            eulaDecision,
+            tokenStatus,
+            listLoading: false,
+        });
+
+        if (tokenStatus && eulaDecision) {
+            await getDomainsInfo.call(this);
+            await getDomainRetentionStatus.call(this);
         }
 
-        if (!this.state.tokenStatus) {
-            this.setState({
-                emptyViewTitle: "Missing credentials!",
-                emptyViewDescription:
-                    "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
-                isFormOpen: true,
-                listLoading: false,
-            });
-            return;
-        }
+        this.setState({listLoading : false})
 
-        await this.loadDomains();
-        await getDomainRetentionStatus.call(this);
 
         const observer = window.Jsw.Observer;
         this._onPleskTaskComplete = (payload) => {
@@ -278,12 +259,9 @@ export default class App extends Component {
             syncButtonState,
             searchQuery,
             tokenStatus,
-            formState,
-            isFormOpen,
             emptyViewTitle,
             emptyViewDescription,
             eulaDecision,
-            privacyPolicyDialog
         } = this.state;
 
         const filtered = domains.filter(d => d['domain-name']?.toLowerCase().includes(searchQuery.trim().toLowerCase()));
@@ -295,106 +273,88 @@ export default class App extends Component {
         const sorted = this.getFilteredSortedDomains();
         const columns = this.renderColumns(allSelected, isIndeterminate, selectedDomains);
 
+        const needsEula = !eulaDecision
+        const needsToken = !tokenStatus
+
+        console.log("EULA PAPA PULA: ", eulaDecision)
+        console.log("TOKEN: ", tokenStatus)
+
         return (
             <div>
-                {(eulaDecision !== true) ? (
+                {needsEula || needsToken ? (
                     <Dialog
-                        isOpen={!!privacyPolicyDialog}
-                        title="Privacy Policy & Data Processing"
+                        isOpen={needsEula || needsToken}
+                        title={needsEula ? "Privacy Policy & deSEC token" : "deSEC Credentials"}
                         size="sm"
+                        closingConfirmation={true}
+                        // banner={<img src="img/dialog-banner.png" alt="" />}
+
                         onClose={async () => {
                             await saveUserEulaDecision.call(this, false);
 
                             this.setState({
                                 eulaDecision: false,
-                                emptyViewTitle: "Privacy policy denied!",
+                                emptyViewTitle: "Privacy policy & deSEC token pop-up dialog was closed!",
                                 emptyViewDescription:
-                                    "Acceptance of the Privacy Policy is required to use this extension. To revisit the policy, please refresh the page.",
+                                    "Acceptance of the Privacy Policy and deSEC token creation are required to use this extension. To revisit the pop-up dialog, please refresh the page.",
                                 listLoading: false,
-                                privacyPolicyDialog: false,
                             });
                         }}
+
+
                         form={{
                             onSubmit: async () => {
-                                await saveUserEulaDecision.call(this, true);
 
-                                this.setState(
-                                    {
+                                if(needsEula) {
+                                    await saveUserEulaDecision.call(this, true);
+                                    this.setState({
                                         eulaDecision: true,
-                                        privacyPolicyDialog: false,
-                                    },
-                                    async () => {
-                                        await this.loadDomains();
-                                    }
-                                );
+                                    });
+                                }
+
+                                if(needsToken) {
+                                    await validateToken.call(this);
+                                    this.setState({
+                                        eulaDecision: true,
+                                    });
+                                }
+
                             },
                             submitButton: { children: "Agree!" },
                             cancelButton: { children: "I do not agree!" }
                         }}
                     >
-                        <Section title="Read the full policy">
-                            <Paragraph>
-                                <Link href="https://github.com/layershift/ext-ls-desec/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">
-                                    Open Privacy Policy
-                                </Link>
-                            </Paragraph>
-                        </Section>
+                        {needsToken ? (
+                         <div>
+                             <Section title="deSEC API Token" >
+                                 <FormFieldText
+                                     label="API Token"
+                                     size="lg"
+                                     required
+                                     onChange={(value) => this.setState({ inputToken: value })}
+                                 />
+                             </Section>
+                         </div>
+                        ) : null}
 
-                        <Paragraph>
-                            If you do not agree, you will not be able to perform any operations using this extension.
-                        </Paragraph>
+                        {needsEula ? (
+                          <div>
+                              <Section title="Privacy Policy">
+                                  <Paragraph>
+                                      <Link href="https://github.com/layershift/ext-ls-desec/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">
+                                          Open Privacy Policy
+                                      </Link>
+                                  </Paragraph>
+                              </Section>
+
+                              <Paragraph>
+                                  By pressing the "Agree!" button, you accept the extension's privacy policy!
+                              </Paragraph>
+                          </div>
+                        ) : null}
 
                     </Dialog>
                 ) : null}
-
-
-                {tokenStatus === null || tokenStatus === undefined || tokenStatus === false && (
-                    <Drawer
-                        title="deSEC Credentials"
-                        size="md"
-                        description={""}
-                        isOpen={isFormOpen}
-                        onClose={() => {
-                            this.setState(({
-                                isFormOpen: false,
-                            }));
-                        }}
-                        form={{
-                            onSubmit: () => {
-                                this.setState({ formState: 'submit' });
-                                validateToken.bind(this)();
-                            },
-                            applyButton: false,
-                            submitButton: {
-                                children: formState === 'submit' ? 'Saving...' : 'Save'
-                            },
-                            state: formState,
-                            hideButton: true
-                        }}
-                        closingConfirmation={true}
-                    >
-                        <Paragraph>
-                            Login to{" "}
-                            <Link href="https://desec.io" target="_blank" rel="noopener noreferrer">
-                                desec.io
-                            </Link>{" "}
-                            and create a token with <strong>can create domains</strong> and{" "}
-                            <strong>can delete domains</strong> permissions. Paste the token secret value below:
-                        </Paragraph>
-                        <br />
-
-
-                        <Section title="deSEC API Token" >
-                            <FormFieldText
-                                label="API Token"
-                                size="lg"
-                                required
-                                onChange={(value) => this.setState({ inputToken: value })}
-                            />
-                        </Section>
-                    </Drawer>
-
-                )}
 
                 <Tabs active={1} monospaced>
                     <Tab key={1} title="Control Panel" icon="cd-up-in-cloud">
