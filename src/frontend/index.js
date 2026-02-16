@@ -291,7 +291,7 @@ export default class App extends Component {
 
                         onClose={async () => {
                             await saveUserEulaDecision.call(this, false);
-
+                            
                             this.setState({
                                 eulaDecision: false,
                                 emptyViewTitle: "Privacy policy & deSEC token pop-up dialog was closed!",
@@ -310,6 +310,7 @@ export default class App extends Component {
                                     this.setState({
                                         eulaDecision: true,
                                     });
+                                    await getDomainsInfo.call(this);
                                 }
 
                                 if(needsToken) {
