@@ -6,6 +6,7 @@
 - Before initiating a Long Task, an additional check was implemented to prevent duplicate task execution and avoid polluting the task pool.
 - Automatic of DNS records is now possible for subdomains and additional domains in Plesk subscriptions
 - Synchronization status updates were automatic until the introduction of Plesk's Long Tasks. We now relay task status to the React frontend by listening for the plesk:taskComplete event.
+- Added a pop-up dialog for both deSEC token and privacy policy
 
 ### Bug Fixes:
 
