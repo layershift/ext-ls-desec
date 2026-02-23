@@ -290,9 +290,10 @@ export default class App extends Component {
 
                             this.setState({
                                 eulaDecision: false,
-                                emptyViewTitle: "Privacy policy & deSEC token pop-up dialog was closed!",
+                                tokenStatus: false,
+                                emptyViewTitle: "License agreement & deSEC token pop-up dialog was closed!",
                                 emptyViewDescription:
-                                    "Acceptance of the Privacy Policy and deSEC token creation are required to use this extension. To revisit the pop-up dialog, please refresh the page.",
+                                    "Acceptance of the license agreement and deSEC token creation are required to use this extension. To revisit the pop-up dialog, please refresh the page.",
                                 listLoading: false,
                             });
                         }}
@@ -300,29 +301,22 @@ export default class App extends Component {
 
                         form={{
                             onSubmit: async () => {
-                                let ok = null
                                 if(needsEula) {
                                     await saveUserEulaDecision.call(this, true);
-                                    this.setState({
-                                        eulaDecision: true,
-                                    });
+                                    this.setState({ eulaDecision: true });
                                 }
 
                                 if(needsToken) {
-                                    ok = await validateToken.call(this);
+                                    const ok = await validateToken.call(this);
+                                    if(!ok) return;
 
+                                    this.setState({ tokenStatus: true });
                                 }
 
-                                if (ok) {
-                                    this.setState({
-                                        tokenStatus: true,
-                                        listLoading: false
-                                    });
-                                    await getDomainsInfo.call(this);
-                                }
-
-
+                                this.setState({ listLoading: true });
+                                await getDomainsInfo.call(this);
                             },
+
                             submitButton: { children: "Agree!" },
                             cancelButton: { children: "I do not agree!" }
                         }}
@@ -342,16 +336,16 @@ export default class App extends Component {
 
                         {needsEula ? (
                           <div>
-                              <Section title="Privacy Policy">
+                              <Section title="License Agreement">
                                   <Paragraph>
-                                      <Link href="https://github.com/layershift/ext-ls-desec/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">
-                                          Open Privacy Policy
+                                      <Link href="https://raw.githubusercontent.com/layershift/ext-ls-desec/refs/heads/main/LICENSE" target="_blank" rel="noopener noreferrer">
+                                          Open License
                                       </Link>
                                   </Paragraph>
                               </Section>
 
                               <Paragraph>
-                                  By pressing the "Agree!" button, you accept the extension's privacy policy!
+                                  By pressing the "Agree!" button, you accept the extension's license agreement!
                               </Paragraph>
                           </div>
                         ) : null}
