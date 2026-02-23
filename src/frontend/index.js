@@ -50,7 +50,7 @@ export default class App extends Component {
             await getDomainRetentionStatus.call(this);
         }
 
-        this.setState({listLoading : false})
+        this.setState({listLoading : true})
 
 
         const observer = window.Jsw.Observer;
@@ -301,20 +301,24 @@ export default class App extends Component {
 
                         form={{
                             onSubmit: async () => {
-                                if(needsEula) {
-                                    await saveUserEulaDecision.call(this, true);
-                                    this.setState({ eulaDecision: true });
+
+                                try {
+                                    if(needsEula) {
+                                        await saveUserEulaDecision.call(this, true);
+                                    }
+
+                                    if(needsToken) {
+                                       await validateToken.call(this);
+                                    }
+
+                                } finally {
+                                    this.setState({
+                                        eulaDecision: true,
+                                    });
+
+                                    await getDomainsInfo.call(this);
                                 }
 
-                                if(needsToken) {
-                                    const ok = await validateToken.call(this);
-                                    if(!ok) return;
-
-                                    this.setState({ tokenStatus: true });
-                                }
-
-                                this.setState({ listLoading: true });
-                                await getDomainsInfo.call(this);
                             },
 
                             submitButton: { children: "Agree!" },

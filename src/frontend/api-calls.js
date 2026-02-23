@@ -43,8 +43,6 @@ export const saveUserEulaDecision = async function(decision) {
             [decision]
         );
 
-        this.setState({ eulaDecision: decision })
-
 
     } catch (error) {
         const errorMessage = error?.message
@@ -245,9 +243,7 @@ export const validateToken = async function () {
                 tokenStatus: true,
                 }
             ));
-            await getDomainsInfo.call(this);
 
-            return true
         } else {
             this.setState(prevState => ({
                 toasts: [
@@ -258,10 +254,10 @@ export const validateToken = async function () {
                         message: `Invalid deSEC API token. Please insert a valid one!`
                     }
                 ],
+                tokenStatus: false,
                 })
             );
 
-            return false
         }
 
 
