@@ -294,8 +294,11 @@ class ApiController extends pm_Controller_Action
 
         if ($this->getRequest()->isPost()) {
             try {
+
+
                 $payload = InputSanitizer::readJsonBody();
                 $tokenValidity = new Account()->validateToken($payload[0]);
+                $this->myLogger->log("error", "Payload: ". $payload[0]);
 
                 if($tokenValidity["token"] === "true") {
                     pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);

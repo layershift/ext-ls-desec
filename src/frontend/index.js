@@ -50,7 +50,7 @@ export default class App extends Component {
             await getDomainRetentionStatus.call(this);
         }
 
-        this.setState({listLoading : true})
+        this.setState({listLoading : false})
 
 
         const observer = window.Jsw.Observer;
@@ -275,6 +275,8 @@ export default class App extends Component {
         const needsEula = !eulaDecision
         const needsToken = !tokenStatus
 
+        console.log(needsToken, needsEula)
+
         return (
             <div>
                 {needsEula || needsToken ? (
@@ -296,6 +298,7 @@ export default class App extends Component {
                                     "Acceptance of the license agreement and deSEC token creation are required to use this extension. To revisit the pop-up dialog, please refresh the page.",
                                 listLoading: false,
                             });
+
                         }}
 
 
@@ -308,7 +311,7 @@ export default class App extends Component {
                                     }
 
                                     if(needsToken) {
-                                       await validateToken.call(this);
+                                        await validateToken.call(this);
                                     }
 
                                 } finally {
@@ -316,13 +319,14 @@ export default class App extends Component {
                                         eulaDecision: true,
                                     });
 
-                                    await getDomainsInfo.call(this);
+                                    if(needsToken)
+                                        await getDomainsInfo.call(this);
                                 }
 
                             },
 
-                            submitButton: { children: "Agree!" },
-                            cancelButton: { children: "I do not agree!" }
+                            submitButton: { children: needsToken && !needsEula ? "Submit" : "Agree!" },
+                            cancelButton: { children: needsToken && !needsEula ? "Cancel" : "I do not agree!" },
                         }}
                     >
                         {needsToken ? (

@@ -100,9 +100,9 @@ export const getDomainsInfo = async function () {
                     message: `${errorMessage}`
                 }
             ],
+
             emptyViewTitle: "Something went wrong!",
             emptyViewDescription: "An error occurred while fetching domains information.",
-            listLoading: false
 
         }));
     }
@@ -207,16 +207,9 @@ export const checkTokenExists = async function () {
         }
 
     } catch(error) {
-        this.setState(prevState => ({
-            toasts: [
-                ...prevState.toasts,
-                {
-                    key: Math.random().toString(),
-                    intent: 'danger',
-                    message: `${error.message}`
-                }
-            ]}),
-        );
+        this.setState({
+            tokenStatus: false
+        });
     }
 }
 
@@ -243,23 +236,7 @@ export const validateToken = async function () {
                 tokenStatus: true,
                 }
             ));
-
-        } else {
-            this.setState(prevState => ({
-                toasts: [
-                    ...prevState.toasts,
-                    {
-                        key: Math.random().toString(),
-                        intent: 'danger',
-                        message: `Invalid deSEC API token. Please insert a valid one!`
-                    }
-                ],
-                tokenStatus: false,
-                })
-            );
-
         }
-
 
     } catch(error) {
         this.setState(prevState => ({
