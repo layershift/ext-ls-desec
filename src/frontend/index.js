@@ -38,7 +38,7 @@ export default class App extends Component {
     componentDidMount = async () => {
 
         const eulaDecision = await getUserEulaDecision.call(this);
-        const tokenStatus   = await checkTokenExists.call(this);
+        const tokenStatus  = await checkTokenExists.call(this);
 
         this.setState({
             eulaDecision,
@@ -319,8 +319,7 @@ export default class App extends Component {
                                         eulaDecision: true,
                                     });
 
-                                    if(needsToken)
-                                        await getDomainsInfo.call(this);
+                                    await getDomainsInfo.call(this);
                                 }
 
                             },
