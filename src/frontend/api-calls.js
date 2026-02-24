@@ -238,6 +238,18 @@ export const validateToken = async function () {
                 tokenStatus: true,
                 }
             ));
+        } else {
+            this.setState(prevState => ({
+                toasts: [
+                    ...prevState.toasts,
+                    {
+                        key: Math.random().toString(),
+                        intent: 'danger',
+                        message: `Invalid deSEC API token provided!`
+                    }
+                ],
+                tokenStatus: false
+            }));
         }
 
     } catch(error) {

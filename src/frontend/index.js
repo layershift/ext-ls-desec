@@ -306,20 +306,14 @@ export default class App extends Component {
                             onSubmit: async () => {
 
                                 try {
-                                    if(needsEula) {
-                                        await saveUserEulaDecision.call(this, true);
-                                    }
-
-                                    if(needsToken) {
-                                        await validateToken.call(this);
-                                    }
-
+                                    if (needsEula) await saveUserEulaDecision.call(this, true);
+                                    if (needsToken) await validateToken.call(this);
                                 } finally {
-                                    this.setState({
-                                        eulaDecision: true,
+                                    this.setState({ eulaDecision: true }, async () => {
+                                        if (this.state.tokenStatus) {
+                                            await getDomainsInfo.call(this);
+                                        }
                                     });
-
-                                    await getDomainsInfo.call(this);
                                 }
 
                             },
