@@ -164,7 +164,7 @@ class ApiController extends pm_Controller_Action
             $this->_helper->json(['success' => true]);
 
         } catch (Exception $e) {
-            $this->myLogger->log("error", "Failed to save user's EULA decision retention setting. Error: " . $e->getMessage());
+            $this->myLogger->log("error", "Failed to save user's EULA decision setting. Error: " . $e->getMessage());
 
             $failureResponse = [ "error" =>
                 [ "message" =>  "Failed to save the user's eula decision. Error: " . $e->getMessage() ]

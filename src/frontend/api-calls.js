@@ -195,8 +195,6 @@ export const checkTokenExists = async function () {
         });
 
 
-        return data["token"] === "true"
-
         if(!this.state.tokenStatus) {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
@@ -205,6 +203,8 @@ export const checkTokenExists = async function () {
                 isFormOpen: true,
             });
         }
+
+        return data["token"] === "true"
 
     } catch(error) {
         this.setState({

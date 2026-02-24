@@ -173,7 +173,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 $domainName = $domain->getName();
 
                 $this->setParam('id', $domainId);
-                $this->setParam('domainName', $domainName);
 
                 if (!$desecDomain->getDomain(pm_Domain::getByDomainId($domainId)->getName())) {
                     pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, "No data");
@@ -181,7 +180,6 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                     pm_Domain::getByDomainId($domainId)->setSetting(Settings::DESEC_STATUS->value, "Not Registered");
 
                     throw new NoDomainFound("Domain doesn't exist!");
-
                 }
 
                 $result = $domainUtils->syncDomain($domainId);
