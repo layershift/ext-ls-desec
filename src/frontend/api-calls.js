@@ -190,12 +190,14 @@ export const checkTokenExists = async function () {
             `${this.props.baseUrl}/api/retrieve-token`,
         );
 
+        const result = data["token"] === "true"
+
         this.setState({
-            tokenStatus: data["token"] === "true"
+            tokenStatus: result
         });
 
 
-        if(!this.state.tokenStatus) {
+        if(!result) {
             this.setState({
                 emptyViewTitle: "Missing credentials!",
                 emptyViewDescription:
@@ -204,7 +206,7 @@ export const checkTokenExists = async function () {
             });
         }
 
-        return data["token"] === "true"
+        return result
 
     } catch(error) {
         this.setState({
