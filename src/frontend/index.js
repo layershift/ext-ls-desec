@@ -50,7 +50,7 @@ export default class App extends Component {
             await getDomainRetentionStatus.call(this);
         }
 
-        this.setState({listLoading : false})
+        this.setState({ listLoading : false })
 
 
         const observer = window.Jsw.Observer;

@@ -36,11 +36,16 @@ class ApiController extends pm_Controller_Action
     {
 
         try {
-            if ($this->getRequest()->isGet()) {
-                $domainInfo = $this->domainUtils->getPleskDomains($this->view);
-                $this->myLogger->log("info", "Successfully retrieved the informations regarding the domains!");
-                $this->_helper->json($domainInfo);
+            if(!$this->getRequest()->isGet()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+            $domainInfo = $this->domainUtils->getPleskDomains($this->view);
+            $this->myLogger->log("info", "Successfully retrieved the informations regarding the domains!");
+            $this->_helper->json($domainInfo);
 
         } catch (Exception $e) {
 
@@ -60,17 +65,22 @@ class ApiController extends pm_Controller_Action
     public function saveDomainRetentionStatusAction(): void
     {
         try {
-            if ($this->getRequest()->isPost()) {
-
-                $data = InputSanitizer::readJsonBody();
-                $status = InputSanitizer::normalizeBool($data[0]);
-
-                pm_Settings::set(Settings::DOMAIN_RETENTION->value, $status);
-                $this->myLogger->log("info", "Successfully saved the domain retention status! Current Status: " . $status);
-
-                $this->_helper->json(['success' => true]);
-
+            if(!$this->getRequest()->isPost()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+            $data = InputSanitizer::readJsonBody();
+            $status = InputSanitizer::normalizeBool($data[0]);
+
+            pm_Settings::set(Settings::DOMAIN_RETENTION->value, $status);
+            $this->myLogger->log("info", "Successfully saved the domain retention status! Current Status: " . $status);
+
+            $this->_helper->json(['success' => true]);
+
+
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to save domain retention setting. Error: " . $e->getMessage());
 
@@ -86,18 +96,23 @@ class ApiController extends pm_Controller_Action
     public function getDomainRetentionStatusAction(): void {
 
         try {
-            if ($this->getRequest()->isGet()) {
-
-                $domainRetentionStatus = pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false");
-                $this->myLogger->log("info", "Successfully retrieved the domain retention status! Current Status: " . $domainRetentionStatus);
-                $this->_helper->json(['domain-retention' => $domainRetentionStatus]);
+            if (!$this->getRequest()->isGet()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+            $domainRetentionStatus = pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false");
+            $this->myLogger->log("info", "Successfully retrieved the domain retention status! Current Status: " . $domainRetentionStatus);
+            $this->_helper->json(['domain-retention' => $domainRetentionStatus]);
+
 
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());
 
             $failureResponse = [ "error" =>
-                [ "message" =>  "Failed to save retrieve domain retention setting. Error: " . $e->getMessage() ]
+                [ "message" =>  "Failed to retrieve domain retention setting. Error: " . $e->getMessage() ]
             ];
 
             $this->_helper->json($failureResponse);
@@ -107,11 +122,18 @@ class ApiController extends pm_Controller_Action
     // ################ Privacy Policy and EULA Methods ##############
     public function getUserEulaDecisionAction(): void {
         try {
-            if($this->getRequest()->isGet()) {
-                $userEULADecision = pm_Settings::get(Settings::EULA_DECISION->value, "false");
-                $this->myLogger->log("info", "Successfully retrieved the user's EULA decision! Current Status: " . $userEULADecision);
-                $this->_helper->json(['eula-decision' => $userEULADecision]);
+            if (!$this->getRequest()->isGet()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+
+            $userEULADecision = pm_Settings::get(Settings::EULA_DECISION->value, "false");
+            $this->myLogger->log("info", "Successfully retrieved the user's EULA decision! Current Status: " . $userEULADecision);
+            $this->_helper->json(['eula-decision' => $userEULADecision]);
+
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to retrieve domain retention setting. Error: " . $e->getMessage());
 
@@ -126,15 +148,20 @@ class ApiController extends pm_Controller_Action
     public function saveUserEulaDecisionAction(): void {
 
         try {
-            if($this->getRequest()->isPost()) {
-                $data = InputSanitizer::readJsonBody();
-                $status = InputSanitizer::normalizeBool($data[0]);
-
-                pm_Settings::set(Settings::EULA_DECISION->value, $status);
-                $this->myLogger->log("info", "Successfully saved the user's eula decision! Current Status: " . $status);
-
-                $this->_helper->json(['success' => true]);
+            if(!$this->getRequest()->isPost()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+            $data = InputSanitizer::readJsonBody();
+            $status = InputSanitizer::normalizeBool($data[0]);
+
+            pm_Settings::set(Settings::EULA_DECISION->value, $status);
+            $this->myLogger->log("info", "Successfully saved the user's eula decision! Current Status: " . $status);
+
+            $this->_helper->json(['success' => true]);
 
         } catch (Exception $e) {
             $this->myLogger->log("error", "Failed to save user's EULA decision retention setting. Error: " . $e->getMessage());
@@ -154,22 +181,29 @@ class ApiController extends pm_Controller_Action
     {
 
         try {
-            if ($this->getRequest()->isPost()) {
-                $data = InputSanitizer::readJsonBody();
 
-                if ($data === [] || array_values($data) === $data) {
-                    throw new Exception("Invalid data format!");
-                }
-
-                foreach ($data as $id => $statusRaw) {
-                    $domainId = InputSanitizer::validateDomainId($id);
-                    $status = InputSanitizer::normalizeBool($statusRaw);
-
-                    $domain_obj = pm_Domain::getByDomainId($domainId);
-                    $domain_obj->setSetting(Settings::AUTO_SYNC_STATUS->value, $status);
-                    $this->myLogger->log("info", "Successfully saved the domain's auto-sync status for  " . $domain_obj->getName() . ". Current Status: " . $status);
-                }
+            if(!$this->getRequest()->isPost()) {
+                $this->getResponse()
+                    ->setHttpResponseCode(405)
+                    ->setHeader('Allow', 'GET', true);
+                $this->_helper->json(["error" => "Method not allowed!"]);
             }
+
+            $data = InputSanitizer::readJsonBody();
+
+            if ($data === [] || array_values($data) === $data) {
+                throw new Exception("Invalid data format!");
+            }
+
+            foreach ($data as $id => $statusRaw) {
+                $domainId = InputSanitizer::validateDomainId($id);
+                $status = InputSanitizer::normalizeBool($statusRaw);
+
+                $domain_obj = pm_Domain::getByDomainId($domainId);
+                $domain_obj->setSetting(Settings::AUTO_SYNC_STATUS->value, $status);
+                $this->myLogger->log("info", "Successfully saved the domain's auto-sync status for  " . $domain_obj->getName() . ". Current Status: " . $status);
+            }
+
         } catch (Exception $e) {
             $this->myLogger->log("info", "Failed to save the auto-sync status! Error: " . $e->getMessage());
 
@@ -191,33 +225,38 @@ class ApiController extends pm_Controller_Action
      */
     public function registerDomainAction() {
 
-        if ($this->getRequest()->isPost()) {
-
-            $payload = InputSanitizer::readJsonBody(); // list of IDs
-            if ($payload === [] || array_values($payload) !== $payload) {
-                throw new Exception("Invalid data format!");
-            }
-
-            $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
-            $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
-
-            $addDomainTask = new Modules_LsDesecDns_Task_RegisterDomains();
-            $addDomainTask->setParam('ids', array_values($ids));
-            $manager = new pm_LongTask_Manager();
-
-            $tasks = $manager->getTasks([$addDomainTask->getId()]);
-            $this->myLogger->log('info', 'Concurrency rules: ' . json_encode($addDomainTask->getConcurrencyRules()));
-
-            $manager->start($addDomainTask);
-            $uid = $addDomainTask->getInstanceId();
-
-
-            $this->myLogger->log("info", "Successfully started to register domains in deSEC:\n" . print_r($payload, true));
-            $this->_helper->json([
-                'taskUid'  => $uid,
-                'message'  => 'Register domains task started!',
-            ]);
+        if(!$this->getRequest()->isPost()) {
+            $this->getResponse()
+                ->setHttpResponseCode(405)
+                ->setHeader('Allow', 'GET', true);
+            $this->_helper->json(["error" => "Method not allowed!"]);
         }
+
+        $payload = InputSanitizer::readJsonBody(); // list of IDs
+        if ($payload === [] || array_values($payload) !== $payload) {
+            throw new Exception("Invalid data format!");
+        }
+
+        $ids = array_unique(array_map(fn($id) => InputSanitizer::validateDomainId($id), $payload));
+        $this->myLogger->log('debug', 'Ids: ' . json_encode($ids));
+
+        $addDomainTask = new Modules_LsDesecDns_Task_RegisterDomains();
+        $addDomainTask->setParam('ids', array_values($ids));
+        $manager = new pm_LongTask_Manager();
+
+        $tasks = $manager->getTasks([$addDomainTask->getId()]);
+        $this->myLogger->log('info', 'Concurrency rules: ' . json_encode($addDomainTask->getConcurrencyRules()));
+
+        $manager->start($addDomainTask);
+        $uid = $addDomainTask->getInstanceId();
+
+
+        $this->myLogger->log("info", "Successfully started to register domains in deSEC:\n" . print_r($payload, true));
+        $this->_helper->json([
+            'taskUid'  => $uid,
+            'message'  => 'Register domains task started!',
+        ]);
+
     }
 
     /**
@@ -227,8 +266,11 @@ class ApiController extends pm_Controller_Action
     public function syncDnsZoneAction()
     {
 
-        if (!$this->getRequest()->isPost()) {
-            throw new Exception('POST required');
+        if(!$this->getRequest()->isPost()) {
+            $this->getResponse()
+                ->setHttpResponseCode(405)
+                ->setHeader('Allow', 'GET', true);
+            $this->_helper->json(["error" => "Method not allowed!"]);
         }
 
         $manager = new pm_LongTask_Manager();
@@ -264,58 +306,66 @@ class ApiController extends pm_Controller_Action
 
     public function retrieveTokenAction(): void
     {
+        if(!$this->getRequest()->isGet()) {
+            $this->getResponse()
+                ->setHttpResponseCode(405)
+                ->setHeader('Allow', 'GET', true);
+            $this->_helper->json(["error" => "Method not allowed!"]);
+        }
 
-
-        if ($this->getRequest()->isGet()) {
-            try {
-                if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
-                    pm_Config::get("DESEC_TOKEN")) {
-                    $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
-                    $this->_helper->json(["token" => "true"]);
-                }
-
-                $this->myLogger->log("info", "deSEC API token doesn't exist!");
-                $this->_helper->json(["token" => "false"]);
-
-            } catch(Exception $e) {
-                $this->myLogger->log("error", "Error occurred while retrieving the API token! Error:" . $e->getMessage());
-
-
-                $failureResponse = [ "error" =>
-                    [ "message" =>  $e->getMessage() ]
-                ];
-
-                $this->_helper->json($failureResponse);
+        try {
+            if (pm_Settings::get(Settings::DESEC_TOKEN->value, "") ||
+                pm_Config::get("DESEC_TOKEN")) {
+                $this->myLogger->log("info", "deSEC API token was successfully retrieved!");
+                $this->_helper->json(["token" => "true"]);
             }
+
+            $this->myLogger->log("info", "deSEC API token doesn't exist!");
+            $this->_helper->json(["token" => "false"]);
+
+        } catch(Exception $e) {
+            $this->myLogger->log("error", "Error occurred while retrieving the API token! Error:" . $e->getMessage());
+
+
+            $failureResponse = [ "error" =>
+                [ "message" =>  $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
         }
     }
+
 
     public function validateTokenAction() {
 
-        if ($this->getRequest()->isPost()) {
-            try {
+        if(!$this->getRequest()->isPost()) {
+            $this->getResponse()
+                ->setHttpResponseCode(405)
+                ->setHeader('Allow', 'GET', true);
+            $this->_helper->json(["error" => "Method not allowed!"]);
+        }
 
 
-                $payload = InputSanitizer::readJsonBody();
-                $tokenValidity = new Account()->validateToken($payload[0]);
-                $this->myLogger->log("error", "Payload: ". $payload[0]);
+        try {
 
-                if($tokenValidity["token"] === "true") {
-                    pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);
-                }
+            $payload = InputSanitizer::readJsonBody();
+            $tokenValidity = new Account()->validateToken($payload[0]);
+            $this->myLogger->log("error", "Payload: ". $payload[0]);
 
-                $this->_helper->json($tokenValidity);
-
-            } catch(Exception $e) {
-                $this->myLogger->log("error", "Error occurred while validating the API token! Error: " . $e->getMessage());
-
-                $failureResponse = [ "error" =>
-                    [ "message" =>  $e->getMessage() ]
-                ];
-
-                $this->_helper->json($failureResponse);
+            if($tokenValidity["token"] === "true") {
+                pm_Settings::set(Settings::DESEC_TOKEN->value, $payload[0]);
             }
+
+            $this->_helper->json($tokenValidity);
+
+        } catch(Exception $e) {
+            $this->myLogger->log("error", "Error occurred while validating the API token! Error: " . $e->getMessage());
+
+            $failureResponse = [ "error" =>
+                [ "message" =>  $e->getMessage() ]
+            ];
+
+            $this->_helper->json($failureResponse);
         }
     }
-
 }
