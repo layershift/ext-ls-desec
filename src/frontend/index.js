@@ -274,7 +274,7 @@ export default class App extends Component {
 
         const needsEula = !eulaDecision
         const needsToken = !tokenStatus
-        
+
         return (
             <div>
                 {needsEula || needsToken ? (

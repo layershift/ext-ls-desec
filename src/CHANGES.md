@@ -1,6 +1,8 @@
-## 1.0.0-6 (January 2026):
+## 1.0.0-6 (January - February 2026):
 
 ---
+
+The `1.0.0-6` release version is the first publicly available release of the deSEC Plesk Extension.
 
 ### Improvements:
 - Before initiating a Long Task, an additional check was implemented to prevent duplicate task execution and avoid polluting the task pool.
