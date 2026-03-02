@@ -173,6 +173,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
                 $domainName = $domain->getName();
 
                 $this->setParam('id', $domainId);
+                $this->setParam('domainName', $domainName);
 
                 if (!$desecDomain->getDomain(pm_Domain::getByDomainId($domainId)->getName())) {
                     pm_Domain::getByDomainId($domainId)->setSetting(Settings::LAST_SYNC_STATUS->value, "No data");

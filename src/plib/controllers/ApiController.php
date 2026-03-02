@@ -68,7 +68,7 @@ class ApiController extends pm_Controller_Action
             if(!$this->getRequest()->isPost()) {
                 $this->getResponse()
                     ->setHttpResponseCode(405)
-                    ->setHeader('Allow', 'GET', true);
+                    ->setHeader('Allow', 'POST', true);
                 $this->_helper->json(["error" => "Method not allowed!"]);
             }
 
@@ -151,7 +151,7 @@ class ApiController extends pm_Controller_Action
             if(!$this->getRequest()->isPost()) {
                 $this->getResponse()
                     ->setHttpResponseCode(405)
-                    ->setHeader('Allow', 'GET', true);
+                    ->setHeader('Allow', 'POST', true);
                 $this->_helper->json(["error" => "Method not allowed!"]);
             }
 
@@ -185,7 +185,7 @@ class ApiController extends pm_Controller_Action
             if(!$this->getRequest()->isPost()) {
                 $this->getResponse()
                     ->setHttpResponseCode(405)
-                    ->setHeader('Allow', 'GET', true);
+                    ->setHeader('Allow', 'POST', true);
                 $this->_helper->json(["error" => "Method not allowed!"]);
             }
 
@@ -228,7 +228,7 @@ class ApiController extends pm_Controller_Action
         if(!$this->getRequest()->isPost()) {
             $this->getResponse()
                 ->setHttpResponseCode(405)
-                ->setHeader('Allow', 'GET', true);
+                ->setHeader('Allow', 'POST', true);
             $this->_helper->json(["error" => "Method not allowed!"]);
         }
 
@@ -269,7 +269,7 @@ class ApiController extends pm_Controller_Action
         if(!$this->getRequest()->isPost()) {
             $this->getResponse()
                 ->setHttpResponseCode(405)
-                ->setHeader('Allow', 'GET', true);
+                ->setHeader('Allow', 'POST', true);
             $this->_helper->json(["error" => "Method not allowed!"]);
         }
 
@@ -341,7 +341,7 @@ class ApiController extends pm_Controller_Action
         if(!$this->getRequest()->isPost()) {
             $this->getResponse()
                 ->setHttpResponseCode(405)
-                ->setHeader('Allow', 'GET', true);
+                ->setHeader('Allow', 'POST', true);
             $this->_helper->json(["error" => "Method not allowed!"]);
         }
 
