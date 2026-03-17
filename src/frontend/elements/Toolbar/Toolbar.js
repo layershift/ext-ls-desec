@@ -76,7 +76,7 @@ const DomainListToolbar = ({
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        Go to desec.io!
+                        Go to desec.io
                     </Button>
 
                     <Dropdown

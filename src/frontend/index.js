@@ -291,7 +291,7 @@ export default class App extends Component {
                             this.setState({
                                 eulaDecision: false,
                                 tokenStatus: false,
-                                emptyViewTitle: "License agreement & deSEC token pop-up dialog was closed!",
+                                emptyViewTitle: "License agreement & deSEC token pop-up dialog was closed.",
                                 emptyViewDescription:
                                     "Acceptance of the license agreement and deSEC token creation are required to use this extension. To revisit the pop-up dialog, please refresh the page.",
                                 listLoading: false,
@@ -316,8 +316,8 @@ export default class App extends Component {
 
                             },
 
-                            submitButton: { children: needsToken && !needsEula ? "Submit" : "Agree!" },
-                            cancelButton: { children: needsToken && !needsEula ? "Cancel" : "I do not agree!" },
+                            submitButton: { children: needsToken && !needsEula ? "Submit" : "Agree" },
+                            cancelButton: { children: needsToken && !needsEula ? "Cancel" : "I do not agree" },
                         }}
                     >
                         {needsToken ? (
@@ -344,7 +344,7 @@ export default class App extends Component {
                               </Section>
 
                               <Paragraph>
-                                  By pressing the "Agree!" button, you accept the extension's license agreement!
+                                  By pressing the "Agree" button, you accept the extension's license agreement.
                               </Paragraph>
                           </div>
                         ) : null}
