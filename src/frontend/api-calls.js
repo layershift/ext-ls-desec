@@ -101,7 +101,7 @@ export const getDomainsInfo = async function () {
                 }
             ],
 
-            emptyViewTitle: "Something went wrong!",
+            emptyViewTitle: "Something went wrong",
             emptyViewDescription: "An error occurred while fetching domains information.",
 
         }));
@@ -132,7 +132,7 @@ export const saveDomainRetentionStatus = async function () {
                     {
                         key,
                         intent: 'success',
-                        message: `Domain retention status set to ${flippedValue}!`
+                        message: `Domain retention status set to ${flippedValue}`
                     }
                 ]
             }));
@@ -147,7 +147,7 @@ export const saveDomainRetentionStatus = async function () {
                 {
                     key,
                     intent: 'danger',
-                    message: `An error occurred while saving domain retention status! ${error.message}`
+                    message: `An error occurred while saving domain retention status. Error: ${error.message}`
                 }
             ]
         }));
@@ -199,9 +199,9 @@ export const checkTokenExists = async function () {
 
         if(!result) {
             this.setState({
-                emptyViewTitle: "Missing credentials!",
+                emptyViewTitle: "Missing credentials",
                 emptyViewDescription:
-                    "The deSEC token used within the extension is missing or it was misplaced! Please check the pm_Settings object or panel.ini.",
+                    "The deSEC token used within the extension is missing or it was misplaced. Please check the pm_Settings object or panel.ini.",
                 isFormOpen: true,
             });
         }
@@ -231,7 +231,7 @@ export const validateToken = async function () {
                     {
                         key: Math.random().toString(),
                         intent: 'success',
-                        message: `Valid deSEC API token provided. Welcome!`
+                        message: `Valid deSEC API token provided.`
                     }
                 ],
 
@@ -245,7 +245,7 @@ export const validateToken = async function () {
                     {
                         key: Math.random().toString(),
                         intent: 'danger',
-                        message: `Invalid deSEC API token provided!`
+                        message: `Invalid deSEC API token provided.`
                     }
                 ],
                 tokenStatus: false

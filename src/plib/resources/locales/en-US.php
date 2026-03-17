@@ -2,7 +2,7 @@
 $messages = [
     'app' => [
         'index' => [
-            'title' => 'Sync DNS records with deSEC!',
+            'title' => 'Sync DNS records with deSEC',
         ],
     ],
 ];
