@@ -22,11 +22,11 @@
   },
 
   "require": {
-    "ext-curl": "*",
-    "ext-ctype": "*",
-    "ext-intl": "*"
+    "ext-curl": "8.4.17",
+    "ext-ctype": "8.4.17",
+    "ext-intl": "8.4.17"
   },
   "require-dev": {
-    "plesk/pm-api-stubs": "^18.0"
+    "plesk/pm-api-stubs": "18.0.63"
   }
 }

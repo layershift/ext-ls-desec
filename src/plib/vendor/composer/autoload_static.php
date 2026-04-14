@@ -7,7 +7,7 @@ namespace Composer\Autoload;
 class ComposerStaticInit6cdde2e0a6bec4f584ec8ce2a5f1aadd
 {
     public static $prefixLengthsPsr4 = array (
-        'P' =>
+        'P' => 
         array (
             'PleskExt\\Utils\\Validation\\' => 26,
             'PleskExt\\Utils\\' => 15,
@@ -17,19 +17,19 @@ class ComposerStaticInit6cdde2e0a6bec4f584ec8ce2a5f1aadd
     );
 
     public static $prefixDirsPsr4 = array (
-        'PleskExt\\Utils\\Validation\\' =>
+        'PleskExt\\Utils\\Validation\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils/validation',
         ),
-        'PleskExt\\Utils\\' =>
+        'PleskExt\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/utils',
         ),
-        'PleskExt\\Desec\\Utils\\' =>
+        'PleskExt\\Desec\\Utils\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec/utils',
         ),
-        'PleskExt\\Desec\\' =>
+        'PleskExt\\Desec\\' => 
         array (
             0 => __DIR__ . '/../../../..' . '/modules/ls-desec-dns/library/desec',
         ),

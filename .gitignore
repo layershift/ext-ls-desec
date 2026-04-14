@@ -2,8 +2,5 @@ tests/
 node_modules/
 .idea/
 
-
-*.lock
-package.xml
 *.zip
 

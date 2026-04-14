@@ -1,6 +1,4 @@
-
 import React from 'react';
-import punycode from 'punycode/';
 import { propTypes } from './utils/constants';
 import { createElement, Component } from '@plesk/plesk-ext-sdk';
 import { handleSortByChange, handleSortDirectionChange } from "./elements/SortingMenu/utils";
@@ -174,9 +172,6 @@ export default class App extends Component {
                 title: 'Domain',
                 render: row => {
                     const asciiDomain = row['domain-name']
-                        .split('.')
-                        .map(part => punycode.toUnicode(part))
-                        .join('.');
 
                     return (
                         <Link
