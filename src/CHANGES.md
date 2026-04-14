@@ -1,3 +1,11 @@
+## 1.0.0-7 (April 2026):
+
+-----
+
+### Security patch:
+
+* ⚠️ Axios package version was bumped from `1.13.4` to `1.15.0` because of the CVE-2026-40175 and the reported supply chain attack.
+
 ## 1.0.0-6 (January - February 2026):
 
 ---
@@ -13,7 +21,6 @@ The `1.0.0-6` release version is the first publicly available release of the deS
 ### Bug Fixes:
 
 * Correctly processing the deregistration of a domain when the domain was deleted from the deSEC dashboard, while the extension page is still open(and more accurate data wasn't fetched)
-* Axios package version was bumped from `1.13.4` to `1.15.0` because of the CVE-2026-40175 and the reported supply chain attack.
 
 ## 1.0.0-5 (November 2025):
 
