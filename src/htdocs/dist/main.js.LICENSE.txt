@@ -1,7 +1,7 @@
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */
 
 /**
- * react-router v7.14.1
+ * react-router v7.17.0
  *
  * Copyright (c) Remix Software Inc.
  *
