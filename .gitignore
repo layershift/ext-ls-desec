@@ -6,3 +6,4 @@ scripts/
 vendor/bin
 vendor/plesk
 vendor/psr
+.vscode/

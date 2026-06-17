@@ -120,7 +120,7 @@ class DomainUtils
                 continue;
             }
 
-            if ($option) {
+            if ($option !== null && $option !== '') {
                 $value = $option . " " . $value;
             }
 
