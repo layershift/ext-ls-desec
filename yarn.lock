@@ -1544,7 +1544,7 @@
   dependencies:
     jsx-ast-utils "^2.2.1"
 
-"@plesk/plesk-ext-sdk@latest":
+"@plesk/plesk-ext-sdk@0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@plesk/plesk-ext-sdk/-/plesk-ext-sdk-0.8.0.tgz#4b02d59dc42a745a87eb56c6996b6c91c1999036"
   integrity sha512-OMdTKiScPKpCS8rk1E/daK5MH5fej+NjimG2K2n+O6kyf8IH8LCivj5+At1GoXQhqxPJBlhuvqfwqhWE17Txpg==
@@ -5651,7 +5651,7 @@ react@18:
   dependencies:
     loose-envify "^1.1.0"
 
-react@latest:
+react@19.2.7:
   version "19.2.7"
   resolved "https://registry.yarnpkg.com/react/-/react-19.2.7.tgz#1f47a1bfc06f8ec885752c6f4af14369a9f8260b"
   integrity sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==

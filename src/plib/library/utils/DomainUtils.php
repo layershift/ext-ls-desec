@@ -177,7 +177,8 @@ class DomainUtils
      */
     public function syncDomain($domainId)
     {
-
+        
+        $rrsetByKey = [];
         $summary = [
             'missing' => [],
             'modified' => [],
@@ -186,28 +187,32 @@ class DomainUtils
         ];
 
         $desec = new Dns();
-        $pleskRrsets = $this->getDNSRecords($domainId);
-        $summary['timestamp'] = new DateTime()->format('Y-m-d H:i:s T');
         $domainName = pm_Domain::getByDomainId($domainId)->getName();
 
+        $pleskRrsets = $this->getDNSRecords($domainId);
         $allDesecRRsets = $desec->getRRSets($domainName);
+
+        $summary['timestamp'] = new DateTime()->format('Y-m-d H:i:s T');
+
+        foreach($allDesecRRsets['response'] as $rr) {
+            $desecByKey[$this->buildKey($rr['type'], $rr['subname'])] = $rr;
+        }
 
 
         foreach ($pleskRrsets as $rrset) {
+            
+            $key = $this->buildKey($rrset['type'], $rrset['subname']);
+            $desecRRset = $desecByKey[$key] ?? null;
 
-
-            $response = $desec->getSpecificRRset($domainName, $rrset['subname'], $rrset['type']);
-            $desecRRset = json_decode($response['response'], true);
-
-
+            $pleskRecords[$key] = true;
             $pleskRecords = $rrset['records'];
-            $desecRecords = ($response['code'] === 404) ? [] : $desecRRset['records'] ?? [];
+            $desecRecords = $desecRRset['records'] ?? [];
 
             $this->myLogger->log("debug", "Plesk Records: " . json_encode($pleskRecords) . PHP_EOL);
             $this->myLogger->log("debug", "deSEC Records: " . json_encode($desecRecords) . PHP_EOL);
 
 
-            if(empty($desecRecords)) {
+            if(empty($desecRecords) || $desecRecords === null) {
                 $summary['missing'][] = $rrset;
             } else {
                 $pleskTtl = $rrset['ttl'];
@@ -217,10 +222,6 @@ class DomainUtils
                     $summary['modified'][] = $rrset;
                 }
             }
-
-            $key = $this->buildKey($rrset['type'], $rrset['subname']);
-            $pleskRecords[$key] = true;
-
         }
 
         $this->myLogger->log("debug","Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);

@@ -22,6 +22,22 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         ];
     }
 
+    public function formatElapsed(float $seconds): string
+    {
+        if ($seconds < 1) {
+            return round($seconds * 1000) . ' ms';
+        }
+
+        if ($seconds < 60) {
+            return round($seconds, 2) . ' s';
+        }
+
+        $minutes = (int)floor($seconds / 60);
+        $remaining = $seconds - ($minutes * 60);
+
+        return sprintf('%dm %.1fs', $minutes, $remaining);
+    }
+
     public function statusMessage(): string
     {
         $status = $this->getStatus();
@@ -46,13 +62,16 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
     private function formatDoneMessage(array $summary): string
     {
+        $elapsed = $this->formatElapsed((float)$this->getParam("elapsed"));
+
+
         if (empty($summary)) {
-            return 'DNS zone sync completed (no changes)';
+            return "DNS zone sync completed (no changes) in {$elapsed}";
         }
 
         $totalDomains = count($summary);
 
-        return "DNS zone sync completed successfully ({$totalDomains} domain(s))";
+        return "DNS zone sync completed successfully ({$totalDomains} domain(s)) in {$elapsed}";
     }
 
     private function formatErrorMessage(array $summary): string
@@ -150,6 +169,8 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
 
     public function run(): void
     {
+        $startTime = microtime(true);
+
         /** @var array<int> $ids */
         $ids = (array)$this->getParam('ids');
 
@@ -244,6 +265,7 @@ class Modules_LsDesecDns_Task_SyncDnsZones extends pm_LongTask_Task
         $this->setParam('summary', $summary);
         $this->setParam('output', $this->getOutputSummary());
         $this->setParam('additionalData', $additionalData);
+        $this->setParam('elapsed', microtime(true) - $startTime);
 
     }
     public function onStart()

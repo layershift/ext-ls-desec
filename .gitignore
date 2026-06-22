@@ -3,7 +3,8 @@ node_modules/
 .idea/
 scripts/
 *.zip
-vendor/bin
-vendor/plesk
-vendor/psr
+src/plib/vendor/bin
+src/plib/vendor/plesk
+src/plib/vendor/psr
 .vscode/
+.claude/
