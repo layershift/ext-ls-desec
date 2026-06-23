@@ -171,6 +171,19 @@ class DomainUtils
         return ($norm1 === $norm2 && $ttl1 === $ttl2);
     }
 
+    private function pushChanges(Dns $desec, string $domain, array $rrsets, string $method = 'POST'): void {
+        if (empty($rrsets)) {
+            return ;
+        }
+
+        try {
+            $response = $desec->pushRRsetDesec($domain, $rrsets, $method);
+        } catch (Exception $e) {
+            $this->myLogger->log("error", "deSEC sync ($method) failed: " . $e->getMessage() . PHP_EOL);
+            throw $e;
+        }
+    }
+
     /**
      * @throws \pm_Exception
      * @throws Exception
@@ -198,9 +211,7 @@ class DomainUtils
             $desecByKey[$this->buildKey($rr['type'], $rr['subname'])] = $rr;
         }
 
-
         foreach ($pleskRrsets as $rrset) {
-            
             $key = $this->buildKey($rrset['type'], $rrset['subname']);
             $desecRRset = $desecByKey[$key] ?? null;
 
@@ -227,70 +238,27 @@ class DomainUtils
         $this->myLogger->log("debug","Missing DNS records: " . json_encode($summary['missing'], true) . PHP_EOL);
         $this->myLogger->log("debug","Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
 
-        if(!empty($allDesecRRsets['response']) ) {
-
-            $pleskRrsetKeys = [];
-            foreach ($pleskRrsets as $rr) {
-                $key = $this->buildKey($rr['type'], $rr['subname']);
-                $pleskRrsetKeys[$key] = true;
+        foreach ($allDesecRRsets['response'] as $rrset) {
+            if ($rrset['type'] === 'NS' && $rrset['subname'] === "") {
+                continue; // Skip NS records
             }
 
-            foreach ($allDesecRRsets['response'] as $rrset) {
-                if ($rrset['type'] === 'NS') {
-                    continue; // Skip NS records
-                }
-
-                $key = $this->buildKey($rrset['type'], $rrset['subname']);
-                if (!isset($pleskRrsetKeys[$key])) {
-                    $summary['deleted'][] = [
-                        'subname' => $rrset['subname'],
-                        'type' => $rrset['type'],
-                        'ttl' => $rrset['ttl'],
-                        'records' => []
-                    ];
-                }
-            }
-
-            $this->myLogger->log("debug","Removable DNS records: " . json_encode($summary['deleted'], true) . PHP_EOL);
-
-        }
-
-        if (count($summary['missing']) > 0) {
-            try {
-                $response = $desec->pushRRsetDesec($domainName, $summary['missing']);
-                $this->myLogger->log("debug","Created the missing RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-
-            } catch (Exception $e) {
-                $this->myLogger->log("debug","Failed to create the missing RRsets in deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
-                throw $e;
+            $key = $this->buildKey($rrset['type'], $rrset['subname']);
+            if (!isset($pleskRrsetKeys[$key])) {
+                $summary['deleted'][] = [
+                    'subname' => $rrset['subname'],
+                    'type' => $rrset['type'],
+                    'ttl' => $rrset['ttl'],
+                    'records' => []
+                ];
             }
         }
 
-        if (count($summary['modified']) > 0) {
-            try {
-                $response = $desec->pushRRsetDesec($domainName, $summary['modified'], 'PUT');
-                $this->myLogger->log("debug","Successfully modified RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
+        $this->myLogger->log("debug","Removable DNS records: " . json_encode($summary['deleted'], true) . PHP_EOL);
 
-            } catch (Exception $e) {
-
-                $this->myLogger->log("debug","Failed to modify the RRsets in deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
-                throw $e;
-            }
-        }
-
-        if (count($summary['deleted']) > 0) {
-            try {
-                $response = $desec->pushRRsetDesec($domainName, $summary['deleted'], 'PATCH');
-                $this->myLogger->log("debug","Successfully deleted the RRsets in deSEC! API response: " . json_encode($response, true) . PHP_EOL);
-
-            } catch (Exception $e) {
-
-                $this->myLogger->log("debug","Failed to delete the RRsets from deSEC! API response: " . json_encode($e->getMessage(), true) . PHP_EOL);
-                throw $e;
-            }
-        }
-
-
+        $this->pushChanges($desec, $domainName, $summary['missing']);
+        $this->pushChanges($desec, $domainName, $summary['modified'], 'PUT');
+        $this->pushChanges($desec, $domainName, $summary['deleted'], 'PATCH');
 
         return $summary;
 

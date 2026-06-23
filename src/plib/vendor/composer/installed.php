@@ -3,7 +3,7 @@
         'name' => 'layershift/ls-desec-dns',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '1e6487fbf62330d573599992c7cbe2dc5c55cbb2',
+        'reference' => 'cc9a036807e2e1433b53b62fd5063d2b44e2ce95',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'layershift/ls-desec-dns' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '1e6487fbf62330d573599992c7cbe2dc5c55cbb2',
+            'reference' => 'cc9a036807e2e1433b53b62fd5063d2b44e2ce95',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../../../',
             'aliases' => array(),
