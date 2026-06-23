@@ -191,7 +191,7 @@ class DomainUtils
     public function syncDomain($domainId)
     {
         
-        $rrsetByKey = [];
+        $rrsetMap = [];
         $summary = [
             'missing' => [],
             'modified' => [],
@@ -214,8 +214,8 @@ class DomainUtils
         foreach ($pleskRrsets as $rrset) {
             $key = $this->buildKey($rrset['type'], $rrset['subname']);
             $desecRRset = $desecByKey[$key] ?? null;
-
-            $pleskRecords[$key] = true;
+            
+            $rrsetMap[$key] = true;
             $pleskRecords = $rrset['records'];
             $desecRecords = $desecRRset['records'] ?? [];
 
@@ -239,12 +239,12 @@ class DomainUtils
         $this->myLogger->log("debug","Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
 
         foreach ($allDesecRRsets['response'] as $rrset) {
-            if ($rrset['type'] === 'NS' && $rrset['subname'] === "") {
+            if ($rrset['type'] === 'NS') {
                 continue; // Skip NS records
             }
 
             $key = $this->buildKey($rrset['type'], $rrset['subname']);
-            if (!isset($pleskRrsetKeys[$key])) {
+            if (!isset($rrsetMap[$key])) {
                 $summary['deleted'][] = [
                     'subname' => $rrset['subname'],
                     'type' => $rrset['type'],
