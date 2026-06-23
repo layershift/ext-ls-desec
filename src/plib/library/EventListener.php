@@ -106,7 +106,6 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
     private function handleDomainDelete(array $oldValues, MyLogger $logger): void
     {
-        $desec = new Domains();
         $domainName = $this->toAsciiDomain($oldValues['Domain Name'] ?? '');
 
         if ($domainName === '') {
@@ -119,20 +118,25 @@ class Modules_LsDesecDns_EventListener implements EventListener
         $retentionEnabled =
             pm_Settings::get(Settings::DOMAIN_RETENTION->value, "false") === "true";
 
-        if ($retentionEnabled || !$desec->getDomain($domainName)) {
+        if ($retentionEnabled) {
             return;
         }
 
         try {
-            $response = $desec->deleteDomain($domainName);
+            $deleteTask = new Modules_LsDesecDns_Task_DeleteDomains();
+            $deleteTask->setParam('domains', [$domainName]);
+
+            $manager = new pm_LongTask_Manager();
+            $manager->start($deleteTask);
+
             $logger->log(
                 "debug",
-                "[ event-listener ] Removed {$domainName} from deSEC: " . json_encode($response, true)
+                "[ event-listener ] Queued deSEC deletion of {$domainName} (task: {$deleteTask->getInstanceId()})"
             );
         } catch (Exception $e) {
             $logger->log(
                 "error",
-                "[ event-listener ] deSEC delete error for {$domainName}: " . $e->getMessage()
+                "[ event-listener ] Failed to queue deSEC delete for {$domainName}: " . $e->getMessage()
             );
         }
     }
