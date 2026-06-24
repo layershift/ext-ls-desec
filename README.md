@@ -14,9 +14,7 @@ and PRs to https://github.com/layershift/ext-ls-desec/issues
 Please consider donating to the deSEC project if you find this extension and their DNS hosting service useful!
 
 ## Known issues and limitations
-* Domain aliases are not currently synchronised (only domains and subdomains)
-* All domains are listed at once in a single table without pagination; this might cause performance issues when working with a large number of domains. 
-  Pagination will be implemented in the next version of the extension(v1.0.1)
+* Domain aliases are not currently supported by the extension
 
 
 

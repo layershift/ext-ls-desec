@@ -115,7 +115,7 @@ class DomainUtils
             $key = $this->buildKey($type, $subname);
             $this->myLogger->log("debug","Key  " . $key . " for " . $type);
 
-            if ($type === 'NS' || $type === "SOA" || $type === "master") { # excluding the NS, SOA - deSEC doesn't need them
+            if (($type === 'NS' && $subname === '') || $type === "SOA" || $type === "master") { # excluding the NS, SOA - deSEC doesn't need them
                 $this->myLogger->log("debug","Record excluded(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 continue;
             }
