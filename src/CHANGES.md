@@ -1,3 +1,26 @@
+## 1.1.0-1 (July 2026)
+
+---
+
+### Dependency updates
+
+- ⚠️ `Axios` was upgraded from `1.15.0` to `1.18.0` to address CVE-2026-42264 (a prototype pollution vulnerability)
+- `React` was upgraded to `19.2.7`
+- As part of these upgrades, the related transitive dependencies (such as `ws`, `qs`, and `undici`) were also raised to their newest compatible versions
+
+### Improvements
+
+- Sub-delegated NS records are now synchronized to deSEC by default, ensuring the delegation chain stays intact whenever a DNS zone changes over
+- A dedicated domain-deletion hook was added for better transparency: when a domain is removed from Plesk while it is also registered in deSEC (and the `Domain retention` option is disabled), the deletion progress is now shown directly in the Plesk dashboard
+- The deSEC extension can be opened either from the Menu bar or via `Tools & Settings > deSEC (Additional Services)`
+- For DNS zones containing more than 300 records, synchronization previously took as long as 10 minutes—unacceptably slow. After several rounds of refining the sync algorithm, we reduced that time to roughly 7–8 seconds
+
+### Bug Fixes
+
+- The Master record is a special, Plesk-only record used to mark whether a DNS zone is a master or a slave zone. Since it has no equivalent on the deSEC side, it is now skipped during sync
+- MX records no longer fail to synchronize when their priority is set to 0
+
+
 ## 1.0.1 (April 2026):
 
 -----
