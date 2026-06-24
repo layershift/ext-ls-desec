@@ -6,7 +6,8 @@ class Modules_LsDesecDns_LongTasks extends pm_Hook_LongTasks
     {
         return [
             new Modules_LsDesecDns_Task_SyncDnsZones(),
-            new Modules_LsDesecDns_Task_RegisterDomains()
+            new Modules_LsDesecDns_Task_RegisterDomains(),
+            new Modules_LsDesecDns_Task_DeleteDomains
         ];
     }
 }

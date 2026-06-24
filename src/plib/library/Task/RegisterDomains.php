@@ -23,6 +23,22 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
         ];
     }
 
+    public function formatElapsed(float $seconds): string
+    {
+        if ($seconds < 1) {
+            return round($seconds * 1000) . ' ms';
+        }
+
+        if ($seconds < 60) {
+            return round($seconds, 2) . ' s';
+        }
+
+        $minutes = (int) floor($seconds / 60);
+        $remaining = $seconds - ($minutes * 60);
+
+        return sprintf('%dm %.1fs', $minutes, $remaining);
+    }
+
     public function statusMessage(): string
     {
         $status = $this->getStatus();
@@ -48,12 +64,14 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
     private function formatDoneMessage(array $summary): string
     {
+        $elapsed = $this->formatElapsed((float) $this->getParam('elapsed'));
+
         if (empty($summary)) {
-            return 'No domains were processed.';
+            return "No domains were processed (completed in {$elapsed}).";
         }
 
         $total = count($summary);
-        return "Domain registration completed successfully ({$total} domain(s)).";
+        return "Domain registration completed successfully ({$total} domain(s)) in {$elapsed}.";
     }
 
     private function formatErrorMessage(array $summary): string
@@ -81,13 +99,15 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
             $failed
         );
         $failedPart = implode(', ', $failedLabels);
+        $elapsed = $this->formatElapsed((float) $this->getParam('elapsed'));
 
         return sprintf(
-            'Domain registration failed (processed %d domain(s) — %d succeeded, %d failed: %s).',
+            'Domain registration failed (processed %d domain(s) — %d succeeded, %d failed: %s) after %s.',
             $processed,
             $succeeded,
             $failCount,
-            $failedPart === '' ? 'none' : $failedPart
+            $failedPart === '' ? 'none' : $failedPart,
+            $elapsed
         );
     }
 
@@ -112,6 +132,8 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
      */
     public function run()
     {
+        $startTime = microtime(true);
+
         $manager = new pm_LongTask_Manager();
         $tasks = $manager->getTasks([$this->getId()]);
         $currentTaskId = $this->getInstanceId();
@@ -160,6 +182,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
                 ];
 
                 $this->setParam('summary', $summary);
+                $this->setParam('elapsed', microtime(true) - $startTime);
 
                 // Rethrow wrapped exception to fail the long task (fail-fast behavior)
                 throw new Exception($e->getMessage(), 0, $e);
@@ -168,6 +191,7 @@ class Modules_LsDesecDns_Task_RegisterDomains extends pm_LongTask_Task
 
         $this->setParam('summary', $summary);
         $this->setParam('additionalData', $additionalData);
+        $this->setParam('elapsed', microtime(true) - $startTime);
     }
 
     public function onDone()

@@ -21,6 +21,22 @@ class Modules_LsDesecDns_Task_DeleteDomains extends pm_LongTask_Task
         ];
     }
 
+    public function formatElapsed(float $seconds): string
+    {
+        if ($seconds < 1) {
+            return round($seconds * 1000) . ' ms';
+        }
+
+        if ($seconds < 60) {
+            return round($seconds, 2) . ' s';
+        }
+
+        $minutes = (int) floor($seconds / 60);
+        $remaining = $seconds - ($minutes * 60);
+
+        return sprintf('%dm %.1fs', $minutes, $remaining);
+    }
+
     public function statusMessage(): string
     {
         $status = $this->getStatus();
@@ -43,12 +59,14 @@ class Modules_LsDesecDns_Task_DeleteDomains extends pm_LongTask_Task
 
     private function formatDoneMessage(array $summary): string
     {
+        $elapsed = $this->formatElapsed((float) $this->getParam('elapsed'));
+
         if (empty($summary)) {
-            return 'No domains were deleted.';
+            return "No domains were deleted (completed in {$elapsed}).";
         }
 
         $total = count($summary);
-        return "Domain deletion completed successfully ({$total} domain(s)).";
+        return "Domain was removed from deSEC ({$total} domain(s)) in {$elapsed}.";
     }
 
     private function formatErrorMessage(array $summary): string
@@ -70,56 +88,68 @@ class Modules_LsDesecDns_Task_DeleteDomains extends pm_LongTask_Task
 
         $failCount = count($failed);
         $failedPart = $failCount === 0 ? 'none' : implode(', ', $failed);
+        $elapsed = $this->formatElapsed((float) $this->getParam('elapsed'));
 
         return sprintf(
-            'Domain deletion failed (processed %d domain(s) — %d succeeded, %d failed: %s).',
+            'Domain deletion failed (processed %d domain(s) — %d succeeded, %d failed: %s) after %s.',
             $processed,
             $succeeded,
             $failCount,
-            $failedPart
+            $failedPart,
+            $elapsed
         );
     }
 
     public function run(): void
     {
+        $startTime = microtime(true);
+
         $myLogger = new MyLogger();
         $desecDomains = new Domains();
 
         $summary = [];
-        $domainName = $this->getParam('domains');
+        $domainNames = (array) $this->getParam('domains');
+        $count = count($domainNames);
+        $i = 0;
 
-        try {
-            $this->setParam('domainName', $domainName);
+        foreach ($domainNames as $domainName) {
+            $i++;
 
-            # Nothing to do if the domain isn't registered in deSEC.
-            if (!$desecDomains->getDomain($domainName)) {
-                $myLogger->log('info', "Domain {$domainName} not present in deSEC, skipping delete.");
-                $summary[$domainName] = ['status' => 'Skipped (not registered)'];
-            } else {
-                $myLogger->log('info', "Deleting domain from deSEC: {$domainName}");
-                $response = $desecDomains->deleteDomain($domainName);
-                $summary[$domainName] = ['status' => 'Deleted', 'response' => $response];
+            try {
+                $this->setParam('domainName', $domainName);
+
+                # Nothing to do if the domain isn't registered in deSEC
+                if (!$desecDomains->getDomain($domainName)) {
+                    $myLogger->log('info', "Domain {$domainName} not present in deSEC, skipping delete.");
+                    $summary[$domainName] = ['status' => 'Skipped (not registered)'];
+                } else {
+                    $myLogger->log('info', "Deleting domain from deSEC: {$domainName}");
+                    $response = $desecDomains->deleteDomain($domainName);
+                    $summary[$domainName] = ['status' => 'Deleted', 'response' => $response];
+                }
+
+                if ($this->trackProgress && $count > 0) {
+                    $this->updateProgress((int) floor($i * 100 / $count));
+                }
+
+                $this->setParam('summary', $summary);
+
+            } catch (Exception $e) {
+                $summary[$domainName] = [
+                    'error' => [
+                        'message' => $e->getMessage(),
+                    ],
+                ];
+                $this->setParam('summary', $summary);
+                $myLogger->log('error', "Error deleting {$domainName} from deSEC: " . $e->getMessage());
+
+                $this->setParam('elapsed', microtime(true) - $startTime);
+                throw new Exception($e->getMessage(), 0, $e);
             }
-
-            $this->updateProgress(100);
-            $this->setParam('summary', $summary);
-
-        } catch (Exception $e) {
-            $summary[$domainName] = [
-                'error' => [
-                    'message' => $e->getMessage(),
-                ],
-            ];
-            $this->setParam('summary', $summary);
-
-            $myLogger->log('error', "Error deleting {$domainName} from deSEC: " . $e->getMessage());
-
-            // Fail-fast, consistent with the other tasks.
-            throw new Exception($e->getMessage(), 0, $e);
         }
-        
 
         $this->setParam('summary', $summary);
+        $this->setParam('elapsed', microtime(true) - $startTime);
     }
 
     public function onDone()

@@ -124,7 +124,7 @@ class Modules_LsDesecDns_EventListener implements EventListener
 
         try {
             $deleteTask = new Modules_LsDesecDns_Task_DeleteDomains();
-            $deleteTask->setParam('domains', [$domainName]);
+            $deleteTask->setParam('domains', $domainName);
 
             $manager = new pm_LongTask_Manager();
             $manager->start($deleteTask);
