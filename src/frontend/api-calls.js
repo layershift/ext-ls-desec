@@ -236,6 +236,11 @@ export const validateToken = async function () {
                 ],
 
                 tokenStatus: true,
+                // Reset the empty-view back to its defaults; otherwise the stale
+                // "Missing credentials" message set by checkTokenExists keeps
+                // showing until the page is refreshed (issue #6).
+                emptyViewTitle: "No domains.",
+                emptyViewDescription: "The domain(s) that you are looking for doesn't/don't exist or there aren't any domains hosted on this Plesk instance.",
                 }
             ));
         } else {
