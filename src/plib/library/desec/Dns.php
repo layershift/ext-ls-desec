@@ -40,13 +40,15 @@ class Dns
         $decoded = $res['json'] ?? [];
 
         foreach ($decoded as $row) {
-            if(isset($row['type'], $row['subname'], $row['ttl'], $row['records']) && $row['type'] !== 'NS') {
-                $desecArray[] = [
-                    'subname' => $row['subname'],
-                    'type' => $row['type'],
-                    'ttl' => $row['ttl'],
-                    'records' => $row['records']
-                ];
+            if(isset($row['type'], $row['subname'], $row['ttl'], $row['records'])) {
+                if(!($row['type'] === 'NS' && $row['subname'] === '') || !($row['type'] === 'SOA')) {
+                    $desecArray[] = [
+                        'subname' => $row['subname'],
+                        'type' => $row['type'],
+                        'ttl' => $row['ttl'],
+                        'records' => $row['records']
+                    ];
+                }
             }
         }
 
