@@ -13,8 +13,8 @@
     "build": "plesk-ext-sdk build"
   },
   "dependencies": {
-    "@plesk/plesk-ext-sdk": "0.8.0",
-    "axios": "1.18.0",
+    "@plesk/plesk-ext-sdk": "latest",
+    "axios": "1.21.0",
     "react": "19.2.7",
     "yarn": "1.22.22"
   },

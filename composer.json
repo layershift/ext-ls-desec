@@ -22,9 +22,9 @@
   },
 
   "require": {
-    "ext-curl": "8.5.7",
-    "ext-ctype": "8.5.7",
-    "ext-intl": "8.5.7"
+    "ext-curl": "8.5.12",
+    "ext-ctype": "8.5.12",
+    "ext-intl": "8.5.12"
   },
   "require-dev": {
     "plesk/pm-api-stubs": "18.0.63"
