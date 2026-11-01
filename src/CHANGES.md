@@ -1,3 +1,16 @@
+## 1.2.0-1 (November 2026)
+
+---
+
+### Dependency updates
+
+- `Axios` was upgraded from `1.18.0` to `1.21.0`
+
+### Improvements
+
+- Implemented fix for [#30](https://github.com/layershift/ext-ls-desec/issues/30) - Sync deletes DS records of delegated child zones (only NS is excluded from deletion
+
+
 ## 1.1.0-1 (July 2026)
 
 ---
