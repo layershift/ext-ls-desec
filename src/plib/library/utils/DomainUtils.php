@@ -115,7 +115,7 @@ class DomainUtils
             $key = $this->buildKey($type, $subname);
             $this->myLogger->log("debug","Key  " . $key . " for " . $type);
 
-            if (($type === 'NS' && $subname === '') || $type === "SOA" || $type === "master") { # excluding the NS, SOA - deSEC doesn't need them
+            if (($type === 'NS' && $subname === '') || $type === "SOA" || $type === "DS" || $type === "master") { # excluding the apex NS, SOA, DS - they are managed in deSEC
                 $this->myLogger->log("debug","Record excluded(" . $key . "): " . $subname . " " . $type . " " . $ttl . " " . $value);
                 continue;
             }
@@ -239,8 +239,8 @@ class DomainUtils
         $this->myLogger->log("debug","Modified DNS records: " . json_encode($summary['modified'], true) . PHP_EOL);
 
         foreach ($allDesecRRsets['response'] as $rrset) {
-            if ($rrset['type'] === 'NS') {
-                continue; // Skip NS records
+            if (($rrset['type'] === 'NS' && $rrset['subname'] === '') || $rrset['type'] === 'DS') {
+                continue; // Skip apex NS and DS records - sub-delegated NS can be deleted
             }
 
             $key = $this->buildKey($rrset['type'], $rrset['subname']);

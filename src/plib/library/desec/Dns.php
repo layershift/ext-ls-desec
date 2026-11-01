@@ -41,7 +41,8 @@ class Dns
 
         foreach ($decoded as $row) {
             if(isset($row['type'], $row['subname'], $row['ttl'], $row['records'])) {
-                if(!($row['type'] === 'NS' && $row['subname'] === '') || !($row['type'] === 'SOA')) {
+                # apex NS, SOA and DS are managed in deSEC only - sub-delegated NS are synced
+                if (!(($row['type'] === 'NS' && $row['subname'] === '') || $row['type'] === 'SOA' || $row['type'] === 'DS')) {
                     $desecArray[] = [
                         'subname' => $row['subname'],
                         'type' => $row['type'],
